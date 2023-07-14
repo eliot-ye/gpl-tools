@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite App</title>
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <a href="https://vitejs.dev" target="_blank">
+        <img src="/vite.svg" class="logo" alt="Vite logo" />
+      </a>
+      <a href="https://www.typescriptlang.org/" target="_blank">
+        <img src="./src/typescript.svg" class="logo vanilla" alt="TypeScript logo" />
+      </a>
+      <h1>Vite + TypeScript</h1>
+      <div class="card">
+        <div>
+          a: <span bd-text="data.a">aaa</span>
+          <button id="btnA">click a</button>
+        </div>
+        <div>
+          b: <span bd-text="b">bbb</span>
+          <input type="text" bd-value="b">
+          <input type="checkbox" bd-value="checked">
+          <button id="btnB">click b</button>
+          <button id="btnChecked">click checked</button>
+        </div>
+        <div>
+          title: <span bd-text="title">123</span>
+          <textarea cols="30" rows="10" bd-value="title"></textarea>
+          <button id="btnTitle">click title</button>
+        </div>
+        <button id="unmount">unmount</button>
+      </div>
+      <p class="read-the-docs">
+        Click on the Vite and TypeScript logos to learn more
+      </p>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
