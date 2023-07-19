@@ -9,10 +9,10 @@ type Instance = SubscribeStateInstance | ReactiveConstantInstance;
 interface InstructionHandle {
   (
     ele: HTMLElement,
-    instructionValue: string,
     instructionName: string,
+    instructionValue: string,
     instance: Instance
-  ): (state: any) => void;
+  ): (stateValue: any, state: any) => void;
 }
 
 export function createApp(
@@ -45,24 +45,21 @@ export function createApp(
   const InstructionSet: {
     [instructionName: string]: InstructionHandle;
   } = {
-    text: (ele, instructionValue) => (state) => {
-      const textStr = getValueFromStringKey(instructionValue, state);
-      ele.innerText = textStr;
+    text: (ele) => (stateValue) => {
+      ele.innerText = stateValue;
     },
-    html: (ele, instructionValue) => (state) => {
-      const htmlStr = getValueFromStringKey(instructionValue, state);
-      ele.innerHTML = htmlStr;
+    html: (ele) => (stateValue) => {
+      ele.innerHTML = stateValue;
     },
-    bind: (ele, instructionValue, instructionName) => (state) => {
+    bind: (ele, instructionName) => (stateValue) => {
       const attrName = instructionName.split(":")[1];
-      const stateValue = getValueFromStringKey(instructionValue, state);
       if (["string", "number"].includes(typeof stateValue)) {
         ele.setAttribute(attrName, stateValue);
       } else if (Array.isArray(stateValue)) {
         ele.setAttribute(attrName, stateValue.join(","));
       }
     },
-    value(ele, instructionValue, _instructionName, instance) {
+    value(ele, _instructionName, instructionValue, instance) {
       if (ele.tagName === "INPUT") {
         const _el = ele as HTMLInputElement;
         if (_el.type === "checkbox" || _el.type === "radio") {
@@ -88,8 +85,7 @@ export function createApp(
         });
       }
 
-      return (state) => {
-        const stateValue = getValueFromStringKey(instructionValue, state);
+      return (stateValue) => {
         if (ele.tagName === "INPUT") {
           const _el = ele as HTMLInputElement;
           if (_el.type === "checkbox" || _el.type === "radio") {
@@ -131,7 +127,8 @@ export function createApp(
 
               const subscribeId = instanceKey.instance.$subscribe(
                 (state: any) => {
-                  instructionHandle(state);
+                  const stateValue = getValueFromStringKey(attrValue, state);
+                  instructionHandle(stateValue, state);
                 },
                 [attrValue.split(".")[0]]
               );

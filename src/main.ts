@@ -55,16 +55,16 @@ app.$subscribe((state) => {
 const titleEve = createSubscribeEvents<string>();
 titleEve.subscribe((value) => {
   console.log("订阅 event title", value);
-  app.$setState("title", value);
+  app.$set("title", value);
 });
 
 const btnA = document.getElementById("btnA");
 if (btnA) {
   btnA.addEventListener("click", () => {
     for (let i = 0; i < 100; i++) {
-      app.$setState("a", app.$getState().a + 1);
+      app.$set("a", app.$getState().a + 1);
     }
-    app.$setState("a", app.$get("a") + 1);
+    app.$set("a", app.$get("a") + 1);
     app.$setFromStringKey("data.a", app.$get("data").a + 1);
   });
 }
@@ -72,13 +72,13 @@ if (btnA) {
 const btnB = document.getElementById("btnB");
 if (btnB) {
   btnB.addEventListener("click", () => {
-    app.$setState("b", app.$get("b") + 1);
+    app.$set("b", app.$get("b") + 1);
   });
 }
 const btnChecked = document.getElementById("btnChecked");
 if (btnChecked) {
   btnChecked.addEventListener("click", () => {
-    app.$setState("checked", !app.$get("checked"));
+    app.$set("checked", !app.$get("checked"));
   });
 }
 

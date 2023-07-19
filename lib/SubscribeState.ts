@@ -71,9 +71,9 @@ export function createSubscribeState<T extends Record<string, any>>(
     },
 
     /**
-     * - setState 内部会进行数据的浅层对比。对比相同的属性，不会更新和触发订阅函数。
+     * - $set 内部会进行数据的浅层对比。对比相同的属性，不会更新和触发订阅函数。
      */
-    $setState<K extends StateKeys>(key: K, value: T[K]) {
+    $set<K extends StateKeys>(key: K, value: T[K]) {
       const oldValue = state[key];
       if (oldValue !== value) {
         state[key] = value;
@@ -99,8 +99,8 @@ export function createSubscribeState<T extends Record<string, any>>(
     /**
      * @param fn - 订阅函数
      * - 初始化时会执行一次
-     * - 使用 setState 时，内部在更新数据后才触发函数预计算，订阅函数获取的数据是最新的。
-     * - 短时间内多次使用 setState 时，会触发防抖处理，订阅函数只执行一次。
+     * - 使用 $set 时，内部在更新数据后才触发函数预计算，订阅函数获取的数据是最新的。
+     * - 短时间内多次使用 $set 时，会触发防抖处理，订阅函数只执行一次。
      * @param keys - 订阅属性
      * - 只有订阅的属性发生了更改才触发执行订阅函数。如果不传入该参数，则所有属性更改都会执行。
      * - 如果传入空数组，则订阅函数只执行一次，并且不会返回 subscribeId
