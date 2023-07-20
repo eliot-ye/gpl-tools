@@ -69,6 +69,9 @@ export function createSubscribeState<T extends Record<string, any>>(
     $get<K extends StateKeys>(key: K) {
       return JSON.parse(JSON.stringify(state[key])) as Readonly<T[K]>;
     },
+    $getFromStringKey(key: string) {
+      return getValueFromStringKey(key, getCopyState());
+    },
 
     /**
      * - $set 内部会进行数据的浅层对比。对比相同的属性，不会更新和触发订阅函数。

@@ -5,8 +5,8 @@ type Option<C extends string, T extends JSONConstraint> = {
   [code in C]: T;
 };
 
-interface ListenerFn<C, T> {
-  (code: C, keys: (keyof T)[]): void;
+interface ListenerFn<C> {
+  (code: C): void;
 }
 
 interface SubscribeFn<T> {
@@ -29,13 +29,13 @@ export function createReactiveConstant<
   type Key = keyof T;
 
   type ListenerId = string;
-  let listenerMap: { [id: ListenerId]: ListenerFn<C, T> | undefined } = {};
+  let listenerMap: { [id: ListenerId]: ListenerFn<C> | undefined } = {};
   let listenerIds: ListenerId[] = [];
-  function listenerHandle(_activeCode: C, changeKeys: Key[]) {
+  function listenerHandle(_activeCode: C) {
     for (let i = 0; i < listenerIds.length; i++) {
       const listener = listenerMap[listenerIds[i]];
       try {
-        listener && listener(_activeCode, changeKeys);
+        listener && listener(_activeCode);
       } catch (error) {
         console.error(
           `${_mark} listener (id: ${listenerIds[i]}) error:`,
@@ -102,7 +102,6 @@ export function createReactiveConstant<
         returnValue[key] = value;
         effectKeys.push(key);
         effectHandler(returnValue);
-        listenerHandle(activeCode, [key]);
       }
     },
     $setCode(code: C) {
@@ -124,7 +123,7 @@ export function createReactiveConstant<
         });
 
         effectHandler(returnValue);
-        listenerHandle(activeCode, changeKeys);
+        listenerHandle(activeCode);
       }
     },
     $getCode() {
@@ -167,10 +166,10 @@ export function createReactiveConstant<
 
     /**
      * - 监听函数初始化不执行
-     * - 监听函数在每次数据更改时（执行$setValue, $setCode时）都执行
+     * - 监听函数在每次更改 Code 时（执行 $setCode 时）执行
      * @returns `listenerId`
      */
-    $addListener(fn: ListenerFn<C, T>) {
+    $addListener(fn: ListenerFn<C>) {
       const id: ListenerId = getOnlyStr(listenerIds);
       listenerMap[id] = fn;
       listenerIds.push(id);
