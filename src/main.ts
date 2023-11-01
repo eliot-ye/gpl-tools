@@ -31,13 +31,13 @@ useEffect(() => {
     ele.innerHTML = s3().toString();
   }
 });
-useEffect(() => {
+const s5Id = useEffect(() => {
   console.log("useSignalEffect4", s1(), s2(), s3());
 });
-const s5Id = useEffect(() => {
+destroyEffect(s5Id);
+useEffect(() => {
   console.log("useSignalEffect5", s1(), s2(), s3());
 });
-destroyEffect(s5Id);
 const btnS1 = document.getElementById("btnS1");
 if (btnS1) {
   btnS1.addEventListener("click", function () {
