@@ -1,44 +1,71 @@
 import { getOnlyStr } from "./utils/tools";
 
-interface Handler<T> {
-  (eventData: T): void;
+interface HandlerFn<T, E extends keyof T> {
+  (eventData: T[E]): void;
 }
 
 let serialNumber = 0;
 
-export function createSubscribeEvents<T = any>(mark?: string) {
+export function createSubscribeEvents<T extends Record<string, any>>(
+  mark?: string
+) {
   serialNumber++;
   const _mark = mark || `SerialNumber-${serialNumber}`;
 
-  const handlerMap: { [id: string]: Handler<T> | undefined } = {};
+  type EventName = keyof T;
+
+  interface HandlerMap<E extends EventName> {
+    [id: string]: HandlerFn<T, E> | undefined;
+  }
+  type EventMap = {
+    [E in EventName]?: HandlerMap<E>;
+  };
+
+  const eventMap: EventMap = {};
   const ids: string[] = [];
 
   return {
-    _interfaceType: "SubscribeEvents",
-    _mark,
+    mark: _mark,
 
-    subscribe(handler: Handler<T>) {
+    subscribe<E extends EventName>(eventName: E, handler: HandlerFn<T, E>) {
       let id = getOnlyStr(ids);
 
-      handlerMap[id] = handler;
+      const eventHandlerMap = eventMap[eventName];
+      if (eventHandlerMap) {
+        eventHandlerMap[id] = handler;
+      } else {
+        eventMap[eventName] = {
+          [id]: handler,
+        };
+      }
 
       ids.push(id);
       return id;
     },
 
-    unsubscribe(id: string) {
-      handlerMap[id] = undefined;
+    unsubscribe(eventName: EventName, id: string) {
+      const eventHandlerMap = eventMap[eventName];
+      if (eventHandlerMap) {
+        eventHandlerMap[id] = undefined;
+      }
       ids.splice(ids.indexOf(id), 1);
     },
 
-    publish(eventData: T) {
-      for (let i = 0; i < ids.length; i++) {
-        const id = ids[i];
+    publish<E extends EventName>(eventName: E, eventData: T[E]) {
+      const eventHandlerMap = eventMap[eventName];
+      if (!eventHandlerMap) {
+        console.error(`${_mark} publish event: ${String(eventName)} not found`);
+        return;
+      }
+      for (const id in eventHandlerMap) {
         try {
-          const handler = handlerMap[id];
+          const handler = eventHandlerMap[id];
           handler && handler(eventData);
         } catch (error) {
-          console.error(`${_mark} publish (id: ${id}) error:`, error);
+          console.error(
+            `${_mark} publish (event: ${String(eventName)}) (id: ${id}) error:`,
+            error
+          );
         }
       }
     },
