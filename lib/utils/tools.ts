@@ -55,7 +55,7 @@ export function debounce<T extends Array<any>>(
     immediate?: boolean;
   } = {}
 ): (...args: T) => void {
-  let timer: number | null = null;
+  let timer: NodeJS.Timeout | null = null;
   const { wait = 500, immediate = false } = option;
   return (...args: T) => {
     if (timer) {

@@ -1,7 +1,6 @@
 import "./style.css";
 import {
   createSubscribeState,
-  createSubscribeEvents,
   useEffect,
   useSignal,
   destroyEffect,
@@ -108,12 +107,6 @@ app.$subscribe((state) => {
 //   ["b"]
 // );
 
-const titleEve = createSubscribeEvents<string>();
-titleEve.subscribe((value) => {
-  console.log("订阅 event title", value);
-  app.$set("title", value);
-});
-
 const btnA = document.getElementById("btnA");
 if (btnA) {
   btnA.addEventListener("click", () => {
@@ -141,7 +134,7 @@ if (btnChecked) {
 const btnTitle = document.getElementById("btnTitle");
 if (btnTitle) {
   btnTitle.addEventListener("click", () => {
-    titleEve.publish("hi, a is " + app.$get("b"));
+    app.$set("title", "hi, a is " + app.$get("b"));
   });
 }
 
