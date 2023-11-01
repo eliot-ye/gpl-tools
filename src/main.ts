@@ -1,6 +1,62 @@
 import "./style.css";
-import { createSubscribeState, createSubscribeEvents } from "../lib";
+import {
+  createSubscribeState,
+  createSubscribeEvents,
+  useEffect,
+  useSignal,
+  destroyEffect,
+} from "../lib";
 import { createApp } from "../lib/BindDOM";
+
+const [s1, s1Set] = useSignal(1);
+const [s2, s2Set] = useSignal(1);
+const [s3, s3Set] = useSignal(1);
+useEffect(() => {
+  console.log("useSignalEffect1", s1());
+  const ele = document.querySelector("#btnS1Text");
+  if (ele) {
+    ele.innerHTML = s1().toString();
+  }
+});
+useEffect(() => {
+  console.log("useSignalEffect2", s2());
+  const ele = document.querySelector("#btnS2Text");
+  if (ele) {
+    ele.innerHTML = s2().toString();
+  }
+});
+useEffect(() => {
+  console.log("useSignalEffect3", s3());
+  const ele = document.querySelector("#btnS3Text");
+  if (ele) {
+    ele.innerHTML = s3().toString();
+  }
+});
+useEffect(() => {
+  console.log("useSignalEffect4", s1(), s2(), s3());
+});
+const s5Id = useEffect(() => {
+  console.log("useSignalEffect5", s1(), s2(), s3());
+});
+destroyEffect(s5Id);
+const btnS1 = document.getElementById("btnS1");
+if (btnS1) {
+  btnS1.addEventListener("click", function () {
+    s1Set((v) => v + 1);
+  });
+}
+const btnS2 = document.getElementById("btnS2");
+if (btnS2) {
+  btnS2.addEventListener("click", function () {
+    s2Set((v) => v + 1);
+  });
+}
+const btnS3 = document.getElementById("btnS3");
+if (btnS3) {
+  btnS3.addEventListener("click", function () {
+    s3Set((v) => v + 1);
+  });
+}
 
 const app = createSubscribeState({
   title: "hello",
