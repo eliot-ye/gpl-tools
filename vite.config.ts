@@ -1,11 +1,13 @@
+import { resolve } from "path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
-    lib: {
-      entry: ["./lib/index.ts"],
-      name: "GPL",
-      fileName: "gpl",
+    rollupOptions: {
+      input: {
+        index: resolve(__dirname, "index.html"),
+        SignalEffect: resolve(__dirname, "src/SignalEffect/index.html"),
+      },
     },
   },
 });
