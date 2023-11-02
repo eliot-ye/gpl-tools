@@ -1,20 +1,27 @@
 import { debounce } from "./utils/tools";
 
-interface SignalItem {
+interface SubscriberItem {
   execute?: () => void;
 }
 
-export function createSignalEffect() {
-  const signalSubscribers: (SignalItem | undefined)[] = [];
+let serialNumber = 0;
 
-  let activeSubscriber: SignalItem | undefined;
+export function createSignalEffect(mark?: string) {
+  serialNumber++;
+  const _mark = mark || `SerialNumber-${serialNumber}`;
+
+  const signalSubscribers: (SubscriberItem | undefined)[] = [];
+
+  let activeSubscriber: SubscriberItem | undefined;
 
   function useEffect(callback: () => void) {
+    const index = signalSubscribers.length;
+
     function _execute() {
       try {
         callback();
       } catch (error) {
-        console.error(error);
+        console.error(`${_mark} useEffect (index: ${index}) error:`, error);
       }
     }
     const execute = debounce(_execute, { wait: 0 });
@@ -27,44 +34,44 @@ export function createSignalEffect() {
     _execute();
     activeSubscriber = undefined;
 
-    return signalSubscribers.length - 1;
+    return index;
   }
 
-  function useSignal<T>(value: T) {
-    let _value: T = value;
+  function useSignal<T>(initValue: T) {
+    let _oValue = initValue;
 
-    const signalList: (SignalItem | undefined)[] = [];
+    const subscriberList: (SubscriberItem | undefined)[] = [];
 
-    function setValue(handler: (value: T) => T): void;
-    function setValue(value: T): void;
-    function setValue(signalValue: T | ((value: T) => T)) {
-      let _signalValue = signalValue as any;
-      if (typeof _signalValue === "function") {
-        _signalValue = _signalValue(_value);
+    function setValueHandle(rValue: (value: T) => T): void;
+    function setValueHandle(value: T): void;
+    function setValueHandle(value: T | ((value: T) => T)) {
+      let _nValue = value as any;
+      if (typeof _nValue === "function") {
+        _nValue = _nValue(_oValue);
       }
-      if (_signalValue !== _value) {
-        _value = _signalValue;
-        signalList.forEach((signal, index) => {
-          if (signal) {
-            if (signal.execute) {
-              signal.execute();
-            } else {
-              signalList[index] = undefined;
-            }
+      if (_nValue === _oValue) {
+        return;
+      }
+      _oValue = _nValue;
+      subscriberList.forEach((_subscriber, index) => {
+        if (_subscriber) {
+          if (_subscriber.execute) {
+            _subscriber.execute();
+          } else {
+            subscriberList[index] = undefined;
           }
-        });
-      }
+        }
+      });
     }
 
-    return [
-      () => {
-        if (activeSubscriber && !signalList.includes(activeSubscriber)) {
-          signalList.push(activeSubscriber);
-        }
-        return _value;
-      },
-      setValue,
-    ] as const;
+    function getValueHandle() {
+      if (activeSubscriber && !subscriberList.includes(activeSubscriber)) {
+        subscriberList.push(activeSubscriber);
+      }
+      return _oValue;
+    }
+
+    return [getValueHandle, setValueHandle] as const;
   }
 
   function destroyEffect(id: number) {
