@@ -61,13 +61,13 @@ const I18nObj = createReactiveConstant({
     s1: "click s1",
     s2: "click s2",
     s3: "click s3",
-  },
+  } as const,
   zh: {
     s1: "点击 s1",
     s2: "点击 s2",
     s3: "点击 s3",
-  },
-});
+  } as const,
+} as const);
 const btnL_en = document.getElementById("btnL_en");
 if (btnL_en) {
   btnL_en.addEventListener("click", function () {
