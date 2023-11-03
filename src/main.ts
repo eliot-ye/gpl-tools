@@ -85,25 +85,26 @@ if (LText) {
   LText.innerHTML = I18nObj.$getCode();
 }
 
-const [I18n, I18nSet] = useSignal(I18nObj);
+const [getI18n, setI18n] = useSignal(I18nObj);
 I18nObj.$addListener(() => {
   if (LText) {
     LText.innerHTML = I18nObj.$getCode();
   }
-  I18nSet({ ...I18nObj });
+  setI18n({ ...I18nObj });
 });
 
 useEffect(() => {
-  const btnS1 = document.getElementById("btnS1");
-  if (btnS1) {
-    btnS1.innerHTML = I18n().s1;
-  }
-  const btnS2 = document.getElementById("btnS2");
-  if (btnS2) {
-    btnS2.innerHTML = I18n().s2;
-  }
-  const btnS3 = document.getElementById("btnS3");
-  if (btnS3) {
-    btnS3.innerHTML = I18n().s3;
+  const langEleList = document.querySelectorAll("[data-t]");
+  const i18n = getI18n();
+  for (let index = 0; index < langEleList.length; index++) {
+    const element = langEleList[index];
+    const langKey = element.getAttribute("data-t") as keyof typeof i18n;
+    if (langKey) {
+      const value = i18n[langKey];
+      if (typeof value === "function") {
+        return;
+      }
+      element.innerHTML = value;
+    }
   }
 });
