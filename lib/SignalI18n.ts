@@ -1,5 +1,4 @@
-import { createReactiveConstant } from ".";
-import { useEffect, useSignal } from "./SignalEffect";
+import { createReactiveConstant, useEffect, useSignal } from ".";
 
 type InferKeyArray<T> = T extends `${string}{${infer K}}${infer R}`
   ? [K, ...InferKeyArray<R>]
@@ -15,6 +14,7 @@ type InferKey<T> = InferKeyArray<T> extends Array<infer K extends string>
   : T;
 type Formatted = string | number;
 type KeyConstraint<K extends string, V extends Formatted> = Record<K, V>;
+/** 替换字符串中的占位符 `{*}` */
 export function fromatText<L extends string, V extends Formatted>(
   langString: L,
   value: KeyConstraint<InferKey<L>, V>
@@ -39,6 +39,11 @@ type ExcludedKey<T, K> = {
 };
 type ReactiveConstantReturn = ReturnType<typeof createReactiveConstant>;
 
+/**
+ * 一个基于 `SignalEffect` `ReactiveConstant` 的 document I18n 工具
+ * @param reactiveConstant - createReactiveConstant返回值
+ * @returns function useI18n
+ */
 export function createSignalI18n<T extends ReactiveConstantReturn>(
   reactiveConstant: T
 ) {
