@@ -4,11 +4,69 @@ import {
   useSignal,
   destroyEffect,
   createReactiveConstant,
+  createSignalI18n,
+  fromatText,
 } from "../lib";
 
-const [s1, s1Set] = useSignal(1);
-const [s2, s2Set] = useSignal(1);
-const [s3, s3Set] = useSignal(1);
+const I18nRC = createReactiveConstant({
+  en: {
+    s1: "click s1",
+    s2: "click s2",
+    s3: "click s3 {count}",
+  } as const,
+  zh: {
+    s1: "点击 s1",
+    s2: "点击 s2",
+    s3: "点击 s3 {count}",
+  } as const,
+} as const);
+const useI18n = createSignalI18n(I18nRC);
+
+const btnL_en = document.getElementById("btnL_en");
+if (btnL_en) {
+  btnL_en.addEventListener("click", function () {
+    I18nRC.$setCode("en");
+  });
+}
+const btnL_zh = document.getElementById("btnL_zh");
+if (btnL_zh) {
+  btnL_zh.addEventListener("click", function () {
+    I18nRC.$setCode("zh");
+  });
+}
+const LText = document.getElementById("LText");
+if (LText) {
+  LText.innerHTML = I18nRC.$getCode();
+}
+I18nRC.$addListener(() => {
+  if (LText) {
+    LText.innerHTML = I18nRC.$getCode();
+  }
+});
+
+const s1 = useSignal(1);
+const s2 = useSignal(1);
+const s3 = useSignal(1);
+
+const btnS1 = document.getElementById("btnS1");
+if (btnS1) {
+  btnS1.addEventListener("click", function () {
+    s1.$set((v) => v + 1);
+  });
+}
+const btnS2 = document.getElementById("btnS2");
+if (btnS2) {
+  btnS2.addEventListener("click", function () {
+    s2.$set((v) => v + 1);
+  });
+}
+const btnS3 = document.getElementById("btnS3");
+if (btnS3) {
+  btnS3.addEventListener("click", function () {
+    s3.$set((v) => v + 1);
+  });
+}
+
 useEffect(() => {
   console.log("useSignalEffect1", s1());
   const ele = document.querySelector("#btnS1Text");
@@ -29,82 +87,17 @@ useEffect(() => {
   if (ele) {
     ele.innerHTML = s3().toString();
   }
+
+  if (btnS3) {
+    const i18n = useI18n();
+
+    btnS3.innerText = fromatText(i18n.s3, { count: s3() });
+  }
 });
-const s5Id = useEffect(() => {
+const s4Id = useEffect(() => {
   console.log("useSignalEffect4", s1(), s2(), s3());
 });
-destroyEffect(s5Id);
+destroyEffect(s4Id);
 useEffect(() => {
   console.log("useSignalEffect5", s1(), s2(), s3());
-});
-const btnS1 = document.getElementById("btnS1");
-if (btnS1) {
-  btnS1.addEventListener("click", function () {
-    s1Set((v) => v + 1);
-  });
-}
-const btnS2 = document.getElementById("btnS2");
-if (btnS2) {
-  btnS2.addEventListener("click", function () {
-    s2Set((v) => v + 1);
-  });
-}
-const btnS3 = document.getElementById("btnS3");
-if (btnS3) {
-  btnS3.addEventListener("click", function () {
-    s3Set((v) => v + 1);
-  });
-}
-
-const I18nObj = createReactiveConstant({
-  en: {
-    s1: "click s1",
-    s2: "click s2",
-    s3: "click s3",
-  } as const,
-  zh: {
-    s1: "点击 s1",
-    s2: "点击 s2",
-    s3: "点击 s3",
-  } as const,
-} as const);
-const btnL_en = document.getElementById("btnL_en");
-if (btnL_en) {
-  btnL_en.addEventListener("click", function () {
-    I18nObj.$setCode("en");
-  });
-}
-const btnL_zh = document.getElementById("btnL_zh");
-if (btnL_zh) {
-  btnL_zh.addEventListener("click", function () {
-    I18nObj.$setCode("zh");
-  });
-}
-const LText = document.getElementById("LText");
-if (LText) {
-  LText.innerHTML = I18nObj.$getCode();
-}
-
-const [getI18n, setI18n] = useSignal(I18nObj);
-I18nObj.$addListener(() => {
-  if (LText) {
-    LText.innerHTML = I18nObj.$getCode();
-  }
-  setI18n({ ...I18nObj });
-});
-
-useEffect(() => {
-  const langEleList = document.querySelectorAll("[data-t]");
-  const i18n = getI18n();
-  for (let index = 0; index < langEleList.length; index++) {
-    const element = langEleList[index];
-    const langKey = element.getAttribute("data-t") as keyof typeof i18n;
-    if (langKey) {
-      const value = i18n[langKey];
-      if (typeof value === "function") {
-        return;
-      }
-      element.innerHTML = value;
-    }
-  }
 });

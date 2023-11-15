@@ -42,8 +42,8 @@ export function createSignalEffect(mark?: string) {
 
     const subscriberList: (SubscriberItem | undefined)[] = [];
 
-    function setValueHandle(rValue: (value: T) => T): void;
     function setValueHandle(value: T): void;
+    function setValueHandle(rValue: (value: T) => T): void;
     function setValueHandle(value: T | ((value: T) => T)) {
       let _nValue = value as any;
       if (typeof _nValue === "function") {
@@ -71,7 +71,9 @@ export function createSignalEffect(mark?: string) {
       return _oValue;
     }
 
-    return [getValueHandle, setValueHandle] as const;
+    getValueHandle.$set = setValueHandle;
+
+    return getValueHandle;
   }
 
   function destroyEffect(id: number) {
