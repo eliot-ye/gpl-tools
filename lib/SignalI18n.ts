@@ -1,5 +1,7 @@
 import { createReactiveConstant, useEffect, useSignal } from ".";
 
+const fromatRE = /{(.*?)}/g;
+
 type InferKeyArray<T> = T extends `${string}{${infer K}}${infer R}`
   ? [K, ...InferKeyArray<R>]
   : [];
@@ -24,7 +26,7 @@ export function fromatText<L extends string, V extends Formatted>(
   ...values: V[]
 ): string;
 export function fromatText(text: string, ...args: any[]) {
-  return text.replace(/{(.*?)}/g, (match, key) => {
+  return text.replace(fromatRE, (match, key) => {
     if (isNaN(Number(key))) {
       return args[0][key] || match;
     } else {
@@ -66,7 +68,7 @@ export function createSignalI18n<T extends ReactiveConstantReturn>(
         if (typeof value === "function") {
           return;
         }
-        if (/(\{[\d|\w]+\})/.test(value)) {
+        if (fromatRE.test(value)) {
           const fromatStr = element.getAttribute("data-f");
           if (!fromatStr) {
             return;
