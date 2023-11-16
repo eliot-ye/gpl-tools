@@ -24,11 +24,11 @@ export function fromatText<L extends string, V extends Formatted>(
   ...values: V[]
 ): string;
 export function fromatText(text: string, ...args: any[]) {
-  return text.replace(/{(.*?)}/g, (_match, key) => {
+  return text.replace(/{(.*?)}/g, (match, key) => {
     if (isNaN(Number(key))) {
-      return args[0][key];
+      return args[0][key] || match;
     } else {
-      return args[Number(key)];
+      return args[Number(key)] || match;
     }
   });
 }
