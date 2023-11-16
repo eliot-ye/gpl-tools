@@ -90,7 +90,6 @@ useEffect(() => {
 
   if (btnS3) {
     const i18n = useI18n();
-
     btnS3.innerText = fromatText(i18n.s3, { count: s3() });
   }
 });
@@ -98,6 +97,13 @@ const s4Id = useEffect(() => {
   console.log("useSignalEffect4", s1(), s2(), s3());
 });
 destroyEffect(s4Id);
+
+let init = false;
 useEffect(() => {
-  console.log("useSignalEffect5", s1(), s2(), s3());
+  if (init) {
+    console.log("useSignalEffect5", s1(), s2(), s3());
+  } else {
+    console.log("useSignalEffect5", s1(), s2());
+  }
 });
+init = true;

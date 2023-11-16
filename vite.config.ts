@@ -6,7 +6,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, "index.html"),
-        SignalEffect: resolve(__dirname, "src/SignalEffect/index.html"),
       },
     },
   },

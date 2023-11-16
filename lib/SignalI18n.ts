@@ -56,11 +56,11 @@ export function createSignalI18n<T extends ReactiveConstantReturn>(
   });
 
   useEffect(() => {
-    const langEleList = document.querySelectorAll("[data-t]");
+    const langEleList = document.querySelectorAll<HTMLElement>("[data-t]");
     const i18n = useI18n();
     for (let index = 0; index < langEleList.length; index++) {
       const element = langEleList[index];
-      const langKey = element.getAttribute("data-t") as keyof typeof i18n;
+      const langKey = element.getAttribute("data-t") as keyof V2;
       if (langKey) {
         let value = i18n[langKey] as string;
         if (typeof value === "function") {
@@ -71,8 +71,13 @@ export function createSignalI18n<T extends ReactiveConstantReturn>(
           if (!fromatStr) {
             return;
           }
-          const fromatList = fromatStr.split(",");
-          value = fromatText.apply(null, [value, ...fromatList]);
+          try {
+            const fromatData = JSON.parse(fromatStr);
+            value = fromatText(value, fromatData);
+          } catch (error) {
+            const fromatList = fromatStr.split(",");
+            value = fromatText.apply(null, [value, ...fromatList]);
+          }
         }
         element.innerHTML = value;
       }

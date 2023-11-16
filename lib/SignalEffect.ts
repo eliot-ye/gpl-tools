@@ -14,6 +14,9 @@ export function createSignalEffect(mark?: string) {
 
   let activeSubscriber: SubscriberItem | undefined;
 
+  /**
+   * 注意：初始化时会执行一次callback，用于收集所有Signal依赖项，此时所有需要有反应性的依赖项都应该执行一次
+   */
   function useEffect(callback: () => void) {
     const index = signalSubscribers.length;
 
