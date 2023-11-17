@@ -1,4 +1,5 @@
 import { createReactiveConstant, useEffect, useSignal } from ".";
+import { instructionPrefix } from "./BindDOM";
 
 const fromatRE = /{(.*?)}/g;
 
@@ -58,18 +59,20 @@ export function createSignalI18n<T extends ReactiveConstantReturn>(
   });
 
   useEffect(() => {
-    const langEleList = document.querySelectorAll<HTMLElement>("[data-t]");
+    const langEleList = document.querySelectorAll<HTMLElement>(
+      `[${instructionPrefix}-t]`
+    );
     const i18n = useI18n();
     for (let index = 0; index < langEleList.length; index++) {
       const element = langEleList[index];
-      const langKey = element.getAttribute("data-t") as keyof V2;
+      const langKey = element.getAttribute(`${instructionPrefix}-t`) as keyof V2;
       if (langKey) {
         let value = i18n[langKey] as string;
         if (typeof value === "function") {
           return;
         }
         if (fromatRE.test(value)) {
-          const fromatStr = element.getAttribute("data-f");
+          const fromatStr = element.getAttribute(`${instructionPrefix}-f`);
           if (!fromatStr) {
             return;
           }
