@@ -1,4 +1,9 @@
-import { createReactiveConstant, useEffect, useSignal } from ".";
+import {
+  createReactiveConstant,
+  createSignalEffect,
+  useEffect,
+  useSignal,
+} from ".";
 import { instructionPrefix } from "./BindDOM";
 
 const fromatRE = /{(.*?)}/g;
@@ -40,32 +45,39 @@ export function fromatText(text: string, ...args: any[]) {
 type ExcludedKey<T, K> = {
   [Key in keyof T as Key extends K ? never : Key]: T[Key];
 };
-type ReactiveConstantReturn = ReturnType<typeof createReactiveConstant>;
+type ReactiveConstantRT = ReturnType<typeof createReactiveConstant>;
+type SignalEffectRT = ReturnType<typeof createSignalEffect>;
 
 /**
  * 一个基于 `SignalEffect` `ReactiveConstant` 的 document I18n 工具
  * @param reactiveConstant - createReactiveConstant返回值
  * @returns function useI18n
  */
-export function createSignalI18n<T extends ReactiveConstantReturn>(
-  reactiveConstant: T
+export function createSignalI18n<T extends ReactiveConstantRT>(
+  reactiveConstant: T,
+  option: {useEffect: SignalEffectRT['useEffect'], useSignal: SignalEffectRT['useSignal']} = {
+    useEffect,
+    useSignal,
+  }
 ) {
   type V1 = ExcludedKey<T, `$${string}`>;
   type V2 = ExcludedKey<V1, `_${string}`>;
 
-  const useI18n = useSignal<V2>(reactiveConstant);
+  const useI18n = option.useSignal<V2>(reactiveConstant);
   reactiveConstant.$addListener(() => {
     useI18n.$set({ ...reactiveConstant });
   });
 
-  useEffect(() => {
+  option.useEffect(() => {
     const langEleList = document.querySelectorAll<HTMLElement>(
       `[${instructionPrefix}-t]`
     );
     const i18n = useI18n();
     for (let index = 0; index < langEleList.length; index++) {
       const element = langEleList[index];
-      const langKey = element.getAttribute(`${instructionPrefix}-t`) as keyof V2;
+      const langKey = element.getAttribute(
+        `${instructionPrefix}-t`
+      ) as keyof V2;
       if (langKey) {
         let value = i18n[langKey] as string;
         if (typeof value === "function") {

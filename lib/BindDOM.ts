@@ -1,176 +1,180 @@
-import { createSubscribeState } from "./SubscribeState";
-import { createReactiveConstant } from "./ReactiveConstant";
-import { getValueFromStringKey } from "./utils/tools";
+import { createSignalEffect, createSubscribeEvents } from ".";
 
-type SubscribeStateInstance = ReturnType<typeof createSubscribeState>;
-type ReactiveConstantInstance = ReturnType<typeof createReactiveConstant>;
-type Instance = SubscribeStateInstance | ReactiveConstantInstance;
+export const instructionPrefix = "s";
+export const mark = "BindDOM";
 
-interface InstructionHandle {
-  (
-    ele: HTMLElement,
-    instructionName: string,
-    instructionValue: string,
-    instance: Instance
-  ): (stateValue: any, state: any) => void;
+type SignalEffectRT = ReturnType<typeof createSignalEffect>;
+type SubscribeEventRT = ReturnType<typeof createSubscribeEvents>;
+
+interface AppOptions {
+  ele: HTMLElement | string | null;
+  setup: (ctx: {
+    useSignal: SignalEffectRT["useSignal"];
+    useEffect: SignalEffectRT["useEffect"];
+    destroyEffect: SignalEffectRT["destroyEffect"];
+    event: SubscribeEventRT;
+  }) => Record<string, any>;
 }
 
-export function createApp(
-  instanceList: Instance[],
-  option: { instructionPrefix?: string } = {}
-) {
-  const { instructionPrefix = "bd" } = option;
+export function createApp({ ele: element, setup }: AppOptions) {
+  const rootElement =
+    typeof element === "string"
+      ? document.querySelector<HTMLElement>(element)
+      : element;
+  if (!rootElement) {
+    throw new Error("No root element found");
+  }
 
-  const instanceKeys = instanceList.map((instance) => {
-    if (instance._interfaceType === "SubscribeState") {
-      return {
-        instance,
-        keys: Object.keys(instance.$getStateRaw()),
-        subscribeIds: [] as string[],
-      };
-    }
-    if (instance._interfaceType === "ReactiveConstant") {
-      return {
-        instance,
-        keys: Object.keys(instance),
-        subscribeIds: [] as string[],
-      };
-    }
+  const SignalEffect = createSignalEffect(mark);
+  const SubscribeEvent = createSubscribeEvents(mark);
 
-    return { instance, keys: [] as string[], subscribeIds: [] as string[] };
-  });
-
-  let containerEle: HTMLElement | null = null;
-
-  const InstructionSet: {
-    [instructionName: string]: InstructionHandle;
-  } = {
-    text: (ele) => (stateValue) => {
-      ele.innerText = stateValue;
-    },
-    html: (ele) => (stateValue) => {
-      ele.innerHTML = stateValue;
-    },
-    bind: (ele, instructionName) => (stateValue) => {
-      const attrName = instructionName.split(":")[1];
-      if (["string", "number"].includes(typeof stateValue)) {
-        ele.setAttribute(attrName, stateValue);
-      } else if (Array.isArray(stateValue)) {
-        ele.setAttribute(attrName, stateValue.join(","));
-      }
-    },
-    value(ele, _instructionName, instructionValue, instance) {
-      if (ele.tagName === "INPUT") {
-        const _el = ele as HTMLInputElement;
-        if (_el.type === "checkbox" || _el.type === "radio") {
-          _el.addEventListener("change", () => {
-            instance.$setFromStringKey(instructionValue, _el.checked);
-          });
-        } else {
-          _el.addEventListener("input", () => {
-            instance.$setFromStringKey(instructionValue, _el.value);
-          });
-        }
-      }
-      if (ele.tagName === "SELECT") {
-        const _el = ele as HTMLSelectElement;
-        _el.addEventListener("change", () => {
-          instance.$setFromStringKey(instructionValue, _el.value);
-        });
-      }
-      if (ele.tagName === "TEXTAREA") {
-        const _el = ele as HTMLTextAreaElement;
-        _el.addEventListener("input", () => {
-          instance.$setFromStringKey(instructionValue, _el.value);
-        });
-      }
-
-      return (stateValue) => {
-        if (ele.tagName === "INPUT") {
-          const _el = ele as HTMLInputElement;
-          if (_el.type === "checkbox" || _el.type === "radio") {
-            _el.checked = stateValue;
-          } else {
-            _el.value = stateValue;
-          }
-        }
-        if (ele.tagName === "SELECT") {
-          const _el = ele as HTMLSelectElement;
-          _el.value = stateValue;
-        }
-        if (ele.tagName === "TEXTAREA") {
-          const _el = ele as HTMLTextAreaElement;
-          _el.value = stateValue;
-        }
-      };
-    },
+  const AppCtx = {
+    ...SignalEffect,
+    event: SubscribeEvent,
   };
 
-  function getInstructionNames() {
-    return Object.keys(InstructionSet).map(
-      (item) => `${instructionPrefix}-${item}`
-    );
-  }
-  let instructionNames = getInstructionNames();
+  const dataMap = setup(AppCtx);
 
-  function collectingInstructions(ele: HTMLElement) {
-    const attrNames = ele.getAttributeNames();
-    for (const instructionName of instructionNames) {
-      for (const attrName of attrNames) {
-        if (attrName.startsWith(instructionName)) {
-          for (const instanceKey of instanceKeys) {
-            const attrValue = ele.getAttribute(attrName);
-            if (attrValue) {
-              const instructionHandle = InstructionSet[
-                instructionName.replace(`${instructionPrefix}-`, "")
-              ](ele, attrValue, attrName, instanceKey.instance);
+  const textEffectIds: number[] = [];
+  instructionText({
+    rootElement,
+    dataMap,
+    effectIds: textEffectIds,
+    SignalEffect,
+  });
 
-              const subscribeId = instanceKey.instance.$subscribe(
-                (state: any) => {
-                  const stateValue = getValueFromStringKey(attrValue, state);
-                  instructionHandle(stateValue, state);
-                },
-                [attrValue.split(".")[0]]
-              );
-              if (subscribeId) {
-                instanceKey.subscribeIds.push(subscribeId);
-              }
-            }
-          }
+  const htmlEffectIds: number[] = [];
+  instructionHtml({
+    rootElement,
+    dataMap,
+    effectIds: htmlEffectIds,
+    SignalEffect,
+  });
+
+  instructionOn({
+    rootElement,
+    dataMap,
+    effectIds: [],
+    SignalEffect,
+    SubscribeEvent,
+  });
+
+  return AppCtx;
+}
+
+interface InstructionOptions {
+  rootElement: HTMLElement;
+  dataMap: Record<string, any>;
+  effectIds: number[];
+  SignalEffect: SignalEffectRT;
+}
+
+function instructionText({
+  rootElement,
+  // @ts-ignore
+  dataMap,
+  effectIds,
+  SignalEffect,
+}: InstructionOptions) {
+  effectIds.forEach((effectId) => {
+    SignalEffect.destroyEffect(effectId);
+  });
+
+  const elements = rootElement.querySelectorAll<HTMLElement>(
+    `[${instructionPrefix}-text]`
+  );
+
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+    const instructionVal = element.getAttribute(`${instructionPrefix}-text`);
+    if (instructionVal) {
+      const effectId = SignalEffect.useEffect(() => {
+        const data = eval(`dataMap.${instructionVal}`);
+        try {
+          element.innerText = data;
+        } catch (error) {
+          console.error(`Error in ${instructionPrefix}-text: ${error}`);
         }
-      }
-    }
-
-    if (ele.children) {
-      for (let i = 0; i < ele.children.length; i++) {
-        collectingInstructions(ele.children[i] as HTMLElement);
-      }
+      });
+      effectIds.push(effectId);
     }
   }
+}
 
-  return {
-    registerInstruction(instructionName: string, handler: InstructionHandle) {
-      InstructionSet[instructionName] = handler;
-      instructionNames = getInstructionNames();
-    },
+function instructionHtml({
+  rootElement,
+  // @ts-ignore
+  dataMap,
+  effectIds,
+  SignalEffect,
+}: InstructionOptions) {
+  effectIds.forEach((effectId) => {
+    SignalEffect.destroyEffect(effectId);
+  });
 
-    mount(container: string | HTMLElement) {
-      if (typeof container === "string") {
-        containerEle = document.querySelector(container);
-      } else {
-        containerEle = container;
-      }
+  const elements = rootElement.querySelectorAll<HTMLElement>(
+    `[${instructionPrefix}-html]`
+  );
 
-      if (containerEle) {
-        collectingInstructions(containerEle);
-      }
-    },
-    unmount() {
-      instanceKeys.forEach((instanceKey) => {
-        instanceKey.subscribeIds.forEach((subscribeId) => {
-          instanceKey.instance.$unsubscribe(subscribeId);
-        });
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+    const instructionVal = element.getAttribute(`${instructionPrefix}-html`);
+    if (instructionVal) {
+      const effectId = SignalEffect.useEffect(() => {
+        try {
+          element.innerHTML = eval(`dataMap.${instructionVal}`);
+        } catch (error) {
+          console.error(`Error in ${instructionPrefix}-html: ${error}`);
+        }
       });
-    },
-  } as const;
+      effectIds.push(effectId);
+    }
+  }
+}
+
+interface InstructionOnOptions extends InstructionOptions {
+  SubscribeEvent: SubscribeEventRT;
+}
+function instructionOn({
+  rootElement,
+  SubscribeEvent,
+  // @ts-ignore
+  dataMap,
+}: InstructionOnOptions) {
+  const elements = rootElement.querySelectorAll<HTMLElement>(
+    `[${instructionPrefix}-on]`
+  );
+
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+    const instructionVal = element.getAttribute(`${instructionPrefix}-on`);
+    if (instructionVal) {
+      const instructionValList = instructionVal.split(":");
+      const eventName = instructionValList[0];
+      const SEventName = instructionValList[1];
+      const SEventParam = instructionValList[2];
+      element.addEventListener(eventName, (ev) => {
+        if (SEventParam) {
+          try {
+            SubscribeEvent.publish(SEventName, eval(`dataMap.${SEventParam}`));
+          } catch (error) {
+            if (SEventParam.includes(",")) {
+              SubscribeEvent.publish.apply(null, [
+                SEventName,
+                ...SEventParam.split(",").map((_item) =>
+                  _item === "$event" ? ev : eval(`dataMap.${_item}`)
+                ),
+              ] as any);
+            }
+            SubscribeEvent.publish(
+              SEventName,
+              JSON.parse(SEventParam.replace(/\'/g, '"'))
+            );
+          }
+        } else {
+          SubscribeEvent.publish(SEventName, undefined);
+        }
+      });
+    }
+  }
 }

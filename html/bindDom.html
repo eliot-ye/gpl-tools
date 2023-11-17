@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite App</title>
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <div class="card">
+        <div>
+          <div s-text="langCode()">--</div>
+          <button s-on="click:changeLang:'en'">English</button>
+          <button s-on="click:changeLang:'zh'">中文</button>
+        </div>
+        <div>
+          s1: <span s-text="s1()">ss</span>
+          <button s-t="s1" s-on="click:setS1:s1()+1">click</button>
+        </div>
+        <div>
+          s2: <span s-text="s2()">ss</span>
+          <button s-t="s2" s-on="click:setS2:s2()+1">click</button>
+        </div>
+        <div>
+          s3: <span s-text="s3()">ss</span>
+          <button s-t="s3" s-f='{"count": "sssssss"}' s-on="click:setS3:s3()+1">click</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/bindDom.ts"></script>
+</body>
+
+</html>
