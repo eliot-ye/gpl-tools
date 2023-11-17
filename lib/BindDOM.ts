@@ -62,6 +62,12 @@ export function createApp({ ele: element, setup }: AppOptions) {
   return AppCtx;
 }
 
+function evalFn(str: string, dataMap: Record<string, any>) {
+  return new Function(
+    `"use strict"; var dataMap = arguments[0]; return (dataMap.${str});`
+  )(dataMap);
+}
+
 interface InstructionOptions {
   rootElement: HTMLElement;
   dataMap: Record<string, any>;
@@ -71,7 +77,6 @@ interface InstructionOptions {
 
 function instructionText({
   rootElement,
-  // @ts-ignore
   dataMap,
   effectIds,
   SignalEffect,
@@ -89,7 +94,7 @@ function instructionText({
     const instructionVal = element.getAttribute(`${instructionPrefix}-text`);
     if (instructionVal) {
       const effectId = SignalEffect.useEffect(() => {
-        const data = eval(`dataMap.${instructionVal}`);
+        const data = evalFn(instructionVal, dataMap);
         try {
           element.innerText = data;
         } catch (error) {
@@ -103,7 +108,6 @@ function instructionText({
 
 function instructionHtml({
   rootElement,
-  // @ts-ignore
   dataMap,
   effectIds,
   SignalEffect,
@@ -122,7 +126,7 @@ function instructionHtml({
     if (instructionVal) {
       const effectId = SignalEffect.useEffect(() => {
         try {
-          element.innerHTML = eval(`dataMap.${instructionVal}`);
+          element.innerHTML = evalFn(instructionVal, dataMap);
         } catch (error) {
           console.error(`Error in ${instructionPrefix}-html: ${error}`);
         }
@@ -138,7 +142,6 @@ interface InstructionOnOptions extends InstructionOptions {
 function instructionOn({
   rootElement,
   SubscribeEvent,
-  // @ts-ignore
   dataMap,
 }: InstructionOnOptions) {
   const elements = rootElement.querySelectorAll<HTMLElement>(
@@ -156,13 +159,13 @@ function instructionOn({
       element.addEventListener(eventName, (ev) => {
         if (SEventParam) {
           try {
-            SubscribeEvent.publish(SEventName, eval(`dataMap.${SEventParam}`));
+            SubscribeEvent.publish(SEventName, evalFn(SEventParam, dataMap));
           } catch (error) {
             if (SEventParam.includes(",")) {
               SubscribeEvent.publish.apply(null, [
                 SEventName,
                 ...SEventParam.split(",").map((_item) =>
-                  _item === "$event" ? ev : eval(`dataMap.${_item}`)
+                  _item === "$event" ? ev : evalFn(_item, dataMap)
                 ),
               ] as any);
             }
