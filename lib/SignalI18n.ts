@@ -20,7 +20,7 @@ type InferKeyArray<T> = T extends `${string}{${infer K}}${infer R}`
 type InferKey<T> = InferKeyArray<T> extends Array<infer K extends string>
   ? K
   : T;
-type Formatted = string | number;
+type Formatted = string | number | boolean;
 type KeyConstraint<K extends string, V extends Formatted> = Record<K, V>;
 /** 替换字符串中的占位符 `{*}` */
 export function fromatText<L extends string, V extends Formatted>(
@@ -34,9 +34,9 @@ export function fromatText<L extends string, V extends Formatted>(
 export function fromatText(text: string, ...args: any[]) {
   return text.replace(fromatRE, (match, key) => {
     if (isNaN(Number(key))) {
-      return args[0][key] || match;
+      return args[0][key] ?? match;
     } else {
-      return args[Number(key)] || match;
+      return args[Number(key)] ?? match;
     }
   });
 }

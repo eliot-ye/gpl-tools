@@ -57,6 +57,15 @@ h1 {
 
 .card {
   padding: 2em;
+  display: flex;
+  gap: 1em;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 0 2em rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.25s;
 }
 
 .read-the-docs {
@@ -77,10 +86,6 @@ button {
 button:hover {
   border-color: #646cff;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -91,6 +96,8 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: green;
+    color: #fff;
+    border-color: #fff;
   }
 }
