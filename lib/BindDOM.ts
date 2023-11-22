@@ -6,8 +6,16 @@ export const mark = "BindDOM";
 type SignalEffectRT = ReturnType<typeof createSignalEffect>;
 type SubscribeEventRT = ReturnType<typeof createSubscribeEvents>;
 
+type Directives = Record<
+  string,
+  (
+    ele: HTMLElement,
+    ctx: { instructionVal: string; data(str: string): any }
+  ) => void
+>;
 interface AppOptions {
   ele: HTMLElement | string | null;
+  directives?: Directives;
   setup: (ctx: {
     useSignal: SignalEffectRT["useSignal"];
     useEffect: SignalEffectRT["useEffect"];
@@ -16,7 +24,11 @@ interface AppOptions {
   }) => Record<string, any>;
 }
 
-export function createApp({ ele: element, setup }: AppOptions) {
+export function createApp({
+  ele: element,
+  setup,
+  directives = {},
+}: AppOptions) {
   const rootElement =
     typeof element === "string"
       ? document.querySelector<HTMLElement>(element)
@@ -34,150 +46,125 @@ export function createApp({ ele: element, setup }: AppOptions) {
   };
 
   const dataMap = setup(AppCtx);
-
-  const textEffectIds: number[] = [];
-  instructionText({
-    rootElement,
-    dataMap,
-    effectIds: textEffectIds,
-    SignalEffect,
-  });
-
-  const htmlEffectIds: number[] = [];
-  instructionHtml({
-    rootElement,
-    dataMap,
-    effectIds: htmlEffectIds,
-    SignalEffect,
-  });
-
-  instructionOn({
-    rootElement,
-    dataMap,
-    effectIds: [],
-    SignalEffect,
-    SubscribeEvent,
-  });
-
-  return AppCtx;
-}
-
-function evalFn(str: string, dataMap: Record<string, any>) {
-  return new Function(
-    `"use strict"; var dataMap = arguments[0]; return (dataMap.${str});`
-  )(dataMap);
-}
-
-interface InstructionOptions {
-  rootElement: HTMLElement;
-  dataMap: Record<string, any>;
-  effectIds: number[];
-  SignalEffect: SignalEffectRT;
-}
-
-function instructionText({
-  rootElement,
-  dataMap,
-  effectIds,
-  SignalEffect,
-}: InstructionOptions) {
-  effectIds.forEach((effectId) => {
-    SignalEffect.destroyEffect(effectId);
-  });
-
-  const elements = rootElement.querySelectorAll<HTMLElement>(
-    `[${instructionPrefix}-text]`
-  );
-
-  for (let i = 0; i < elements.length; i++) {
-    const element = elements[i];
-    const instructionVal = element.getAttribute(`${instructionPrefix}-text`);
-    if (instructionVal) {
-      const effectId = SignalEffect.useEffect(() => {
-        const data = evalFn(instructionVal, dataMap);
-        try {
-          element.innerText = data;
-        } catch (error) {
-          console.error(`Error in ${instructionPrefix}-text: ${error}`);
-        }
-      });
-      effectIds.push(effectId);
-    }
+  function $get(str: string) {
+    return new Function(
+      `"use strict"; var dataMap = arguments[0]; return (dataMap.${str});`
+    )(dataMap);
   }
-}
 
-function instructionHtml({
-  rootElement,
-  dataMap,
-  effectIds,
-  SignalEffect,
-}: InstructionOptions) {
-  effectIds.forEach((effectId) => {
-    SignalEffect.destroyEffect(effectId);
-  });
+  const _directives: Directives = {
+    value: (ele, { data, instructionVal }) => {
+      const _ele = ele as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | HTMLTextAreaElement;
+      _ele.value = data(instructionVal);
+    },
+    checked: (ele, { data, instructionVal }) => {
+      const _ele = ele as HTMLInputElement;
+      const value = data(instructionVal);
+      if (value) {
+        _ele.checked = true;
+        _ele.setAttribute("checked", "checked");
+      } else {
+        _ele.checked = false;
+        _ele.removeAttribute("checked");
+      }
+    },
+    disabled: (ele, { data, instructionVal }) => {
+      const _ele = ele as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | HTMLTextAreaElement
+        | HTMLButtonElement;
+      const value = data(instructionVal);
+      value
+        ? _ele.setAttribute("disabled", "disabled")
+        : _ele.removeAttribute("disabled");
+    },
 
-  const elements = rootElement.querySelectorAll<HTMLElement>(
-    `[${instructionPrefix}-html]`
-  );
+    ...directives,
 
-  for (let i = 0; i < elements.length; i++) {
-    const element = elements[i];
-    const instructionVal = element.getAttribute(`${instructionPrefix}-html`);
-    if (instructionVal) {
-      const effectId = SignalEffect.useEffect(() => {
-        try {
-          element.innerHTML = evalFn(instructionVal, dataMap);
-        } catch (error) {
-          console.error(`Error in ${instructionPrefix}-html: ${error}`);
-        }
-      });
-      effectIds.push(effectId);
-    }
-  }
-}
+    text: (ele, { data, instructionVal }) => {
+      ele.innerText = data(instructionVal);
+    },
+    html: (ele, { data, instructionVal }) => {
+      ele.innerHTML = data(instructionVal);
+    },
 
-interface InstructionOnOptions extends InstructionOptions {
-  SubscribeEvent: SubscribeEventRT;
-}
-function instructionOn({
-  rootElement,
-  SubscribeEvent,
-  dataMap,
-}: InstructionOnOptions) {
-  const elements = rootElement.querySelectorAll<HTMLElement>(
-    `[${instructionPrefix}-on]`
-  );
-
-  for (let i = 0; i < elements.length; i++) {
-    const element = elements[i];
-    const instructionVal = element.getAttribute(`${instructionPrefix}-on`);
-    if (instructionVal) {
+    on: (ele, { instructionVal, data }) => {
       const instructionValList = instructionVal.split(":");
       const eventName = instructionValList[0];
       const SEventName = instructionValList[1];
       const SEventParam = instructionValList[2];
-      element.addEventListener(eventName, (ev) => {
+      ele.addEventListener(eventName, (ev) => {
         if (SEventParam) {
-          try {
-            SubscribeEvent.publish(SEventName, evalFn(SEventParam, dataMap));
-          } catch (error) {
-            if (SEventParam.includes(",")) {
-              SubscribeEvent.publish.apply(null, [
-                SEventName,
-                ...SEventParam.split(",").map((_item) =>
-                  _item === "$event" ? ev : evalFn(_item, dataMap)
-                ),
-              ] as any);
+          function getData(item: string) {
+            if (item === "$event") {
+              return ev;
             }
-            SubscribeEvent.publish(
+            if (/('|")(.*?)('|")/.test(item)) {
+              return JSON.parse(item.replace(/\'/g, '"'));
+            }
+            return data(item);
+          }
+
+          if (SEventParam.includes(",")) {
+            SubscribeEvent.publish.apply(null, [
               SEventName,
-              JSON.parse(SEventParam.replace(/\'/g, '"'))
-            );
+              ...SEventParam.split(",").map((_item) => getData(_item)),
+            ] as any);
+          } else {
+            SubscribeEvent.publish(SEventName, getData(SEventParam));
           }
         } else {
-          SubscribeEvent.publish(SEventName, undefined);
+          SubscribeEvent.publish(SEventName, ev);
         }
       });
-    }
+    },
+  };
+  const directivesNames = Object.keys(_directives);
+  const _directivesEffectIdsMap = {} as Record<string, number[]>;
+
+  function executeDirectives(scopeElement: HTMLElement, scope: string) {
+    directivesNames.forEach((directiveName) => {
+      const scopeDirectiveName = scope + directiveName;
+      if (!_directivesEffectIdsMap[scopeDirectiveName]) {
+        _directivesEffectIdsMap[scopeDirectiveName] = [];
+      }
+      _directivesEffectIdsMap[directiveName].forEach((effectId) => {
+        SignalEffect.destroyEffect(effectId);
+      });
+      const elements = scopeElement.querySelectorAll<HTMLElement>(
+        `[${instructionPrefix}-${directiveName}]`
+      );
+
+      for (let i = 0; i < elements.length; i++) {
+        const element = elements[i];
+        const instructionVal = element.getAttribute(
+          `${instructionPrefix}-${directiveName}`
+        );
+        if (instructionVal) {
+          const effectId = SignalEffect.useEffect(() => {
+            try {
+              _directives[directiveName](element, {
+                instructionVal,
+                data: $get,
+              });
+            } catch (error) {
+              console.error(
+                `Error in ${instructionPrefix}-${directiveName}="${instructionVal}"`,
+                error
+              );
+            }
+          });
+          _directivesEffectIdsMap[scopeDirectiveName].push(effectId);
+        }
+      }
+    });
   }
+
+  executeDirectives(rootElement, "");
+
+  return AppCtx;
 }

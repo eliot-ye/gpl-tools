@@ -29,6 +29,16 @@
           s3: <span s-text="s3()">ss</span>
           <button s-t="s3" s-f='{"count": "sssssss"}' s-on="click:setS3:s3()+1">click</button>
         </div>
+        <div>
+          s4: <span s-text="s4()">ss</span>
+          <input s-on="input:inputS4" s-value="s4()" s-disabled="s4Disabled()" />
+          <button s-t="s4" s-on="click:setS4">click</button>
+        </div>
+        <div>
+          s5: <span s-text="s5()">ss</span>
+          <input type="checkbox" s-on="change:changeS5" s-checked="s5()" s-value="s4()" />
+          <button s-t="s5" s-on="click:setS5">click</button>
+        </div>
       </div>
     </div>
   </div>
