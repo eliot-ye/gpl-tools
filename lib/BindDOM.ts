@@ -46,10 +46,25 @@ export function createApp({
   };
 
   const dataMap = setup(AppCtx);
+  const dataList = Object.keys(dataMap);
   function $get(str: string) {
-    return new Function(
-      `"use strict"; var dataMap = arguments[0]; return (dataMap.${str});`
-    )(dataMap);
+    return $getScope(str, dataMap, dataList);
+  }
+  function $getScope(str: string, scopeDataMap: any, scopeDataList?: string[]) {
+    const _scopeDataList = scopeDataList || Object.keys(scopeDataMap);
+
+    if (_scopeDataList.includes(str)) {
+      return scopeDataMap[str]();
+    }
+
+    let dataStr = "";
+    for (let i = 0; i < _scopeDataList.length; i++) {
+      const key = _scopeDataList[i];
+      dataStr += `var ${key} = arguments[0]['${key}'];`;
+    }
+    return new Function(`"use strict"; ${dataStr} return (${str});`)(
+      scopeDataMap
+    );
   }
 
   const _directives: Directives = {
@@ -126,9 +141,13 @@ export function createApp({
   const directivesNames = Object.keys(_directives);
   const _directivesEffectIdsMap = {} as Record<string, number[]>;
 
-  function executeDirectives(scopeElement: HTMLElement, scope: string) {
+  function executeDirectives(
+    scopeElement: HTMLElement,
+    scope?: string,
+    scopeData?: any
+  ) {
     directivesNames.forEach((directiveName) => {
-      const scopeDirectiveName = scope + directiveName;
+      const scopeDirectiveName = (scope || "") + directiveName;
       if (!_directivesEffectIdsMap[scopeDirectiveName]) {
         _directivesEffectIdsMap[scopeDirectiveName] = [];
       }
@@ -138,6 +157,10 @@ export function createApp({
       const elements = scopeElement.querySelectorAll<HTMLElement>(
         `[${instructionPrefix}-${directiveName}]`
       );
+
+      const getDataFn = scopeData
+        ? (str: string) => $getScope(str, scopeData)
+        : $get;
 
       for (let i = 0; i < elements.length; i++) {
         const element = elements[i];
@@ -149,7 +172,7 @@ export function createApp({
             try {
               _directives[directiveName](element, {
                 instructionVal,
-                data: $get,
+                data: getDataFn,
               });
             } catch (error) {
               console.error(
@@ -164,7 +187,7 @@ export function createApp({
     });
   }
 
-  executeDirectives(rootElement, "");
+  executeDirectives(rootElement);
 
   return AppCtx;
 }

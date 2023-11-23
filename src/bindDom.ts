@@ -73,8 +73,8 @@ createApp({
     });
 
     const s5 = useSignal(false);
-    event.subscribe("setS5", () => {
-      s5.$set((_v) => !_v);
+    event.subscribe("setS5", (_v) => {
+      s5.$set(_v);
     });
     event.subscribe("changeS5", (ev) => {
       console.log(ev);
