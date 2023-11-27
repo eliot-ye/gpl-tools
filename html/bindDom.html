@@ -14,31 +14,31 @@
       <div class="card">
         <div>
           <div s-text="langCode">--</div>
-          <button s-on="click:changeLang:'en'">English</button>
-          <button s-on="click:changeLang:'zh'">中文</button>
+          <button s-on="click:changeLang('en')">English</button>
+          <button s-on="click:changeLang('zh')">中文</button>
         </div>
         <div>
           s1: <span s-text="s1">ss</span>
-          <button s-t="s1" s-on="click:setS1:s1()+1">click</button>
+          <button s-t="s1" s-on="click:setS1(s1()+1)">click</button>
         </div>
         <div>
           s2: <span s-text="s2">ss</span>
-          <button s-t="s2" s-on="click:setS2:s2()+1">click</button>
+          <button s-t="s2" s-on="click:setS2(s2()+1)">click</button>
         </div>
         <div>
           s3: <span s-text="s3">ss</span>
-          <button s-t="s3" s-f='{"count": "sssssss"}' s-on="click:setS3:s3()+1">click</button>
+          <button s-t="s3" s-f='{"count": "sssssss"}' s-on="click:setS3(s3()+1)">click</button>
         </div>
         <div>
           s4: <span s-text="s4">ss</span>
-          <input s-on="input:inputS4" s-value="s4" s-disabled="s4Disabled" />
-          <button s-t="s4" s-on="click:setS4">click</button>
+          <input s-on="input:inputS4($event)" s-value="s4" s-disabled="s4Disabled" />
+          <button s-t="s4" s-on="click:setS4Disabled()">click</button>
         </div>
         <div>
           s5:
-          <input type="checkbox" s-on="change:changeS5" s-checked="s5" s-value="s4" />
+          <input type="checkbox" s-on="change:changeS5($event)" s-checked="s5" s-value="s4" />
           <span s-text="s5">ss</span>
-          <button s-t="s5" s-on="click:setS5:!s5()">click</button>
+          <button s-t="s5" s-on="click:setS5(!s5())">click</button>
         </div>
       </div>
     </div>

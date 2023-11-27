@@ -21,17 +21,17 @@ const I18nRC = createReactiveConstant({
 
 createApp({
   ele: "#app",
-  setup({ useSignal, useEffect, event }) {
+  setup({ useSignal, useEffect }) {
     const useI18n = createSignalI18n(I18nRC, {
       useSignal,
       useEffect,
     });
 
     const langCode = useSignal(I18nRC.$getCode());
-    event.subscribe("changeLang", (_langCode) => {
-      langCode.$set(_langCode);
+    function changeLang(_langCode: ReturnType<typeof I18nRC.$getCode>) {
       I18nRC.$setCode(_langCode);
-    });
+      langCode.$set(_langCode);
+    }
 
     const s1 = useSignal(1);
     const s2 = useSignal(1);
@@ -46,24 +46,24 @@ createApp({
       }
     });
 
-    event.subscribe("setS1", (nData) => {
+    function setS1(nData: number) {
       s1.$set(nData);
-    });
-    event.subscribe("setS2", (nData) => {
+    }
+    function setS2(nData: number) {
       s2.$set(nData);
-    });
-    event.subscribe("setS3", (nData) => {
+    }
+    function setS3(nData: number) {
       s3.$set(nData);
-    });
+    }
 
     const s4 = useSignal(1);
-    event.subscribe("inputS4", (ev) => {
+    function inputS4(ev: any) {
       s4.$set(ev.target.value);
-    });
+    }
     const s4Disabled = useSignal(false);
-    event.subscribe("setS4", () => {
+    function setS4Disabled() {
       s4Disabled.$set((_v) => !_v);
-    });
+    }
     useEffect(() => {
       const el = document.querySelector('[s-t="s4"]');
       if (el) {
@@ -73,22 +73,29 @@ createApp({
     });
 
     const s5 = useSignal(false);
-    event.subscribe("setS5", (_v) => {
-      s5.$set(_v);
-    });
-    event.subscribe("changeS5", (ev) => {
-      console.log(ev);
-      s5.$set(ev.target.checked);
-    });
+    function changeS5(ev: any) {
+      s5.$set(ev.target?.checked);
+    }
+    function setS5(value: boolean) {
+      s5.$set(value);
+    }
 
     return {
       langCode,
+      changeLang,
       s1,
+      setS1,
       s2,
+      setS2,
       s3,
+      setS3,
       s4,
+      inputS4,
       s4Disabled,
+      setS4Disabled,
       s5,
+      changeS5,
+      setS5,
     };
   },
 });

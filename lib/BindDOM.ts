@@ -107,34 +107,12 @@ export function createApp({
       ele.innerHTML = data(instructionVal);
     },
 
-    on: (ele, { instructionVal, data }) => {
+    on: (ele, { instructionVal }) => {
       const instructionValList = instructionVal.split(":");
       const eventName = instructionValList[0];
-      const SEventName = instructionValList[1];
-      const SEventParam = instructionValList[2];
+      const SEventStr = instructionValList[1];
       ele.addEventListener(eventName, (ev) => {
-        if (SEventParam) {
-          function getData(item: string) {
-            if (item === "$event") {
-              return ev;
-            }
-            if (/('|")(.*?)('|")/.test(item)) {
-              return JSON.parse(item.replace(/\'/g, '"'));
-            }
-            return data(item);
-          }
-
-          if (SEventParam.includes(",")) {
-            SubscribeEvent.publish.apply(null, [
-              SEventName,
-              ...SEventParam.split(",").map((_item) => getData(_item)),
-            ] as any);
-          } else {
-            SubscribeEvent.publish(SEventName, getData(SEventParam));
-          }
-        } else {
-          SubscribeEvent.publish(SEventName, ev);
-        }
+        $getScope(SEventStr, {...dataMap, $event: ev})
       });
     },
   };
