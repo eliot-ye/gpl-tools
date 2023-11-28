@@ -43,7 +43,7 @@
         <button @click="s6.$set([...s6(),s6().length])">s6 add</button>
         <button @click="s6.$set([...s6().slice(2,s6().length-1)])">s6 remove</button>
         <ul>
-          <li s-for="item in s6" s-text="item.title">
+          <li s-for="item in s6">
             <span s-text="item.title"></span>
           </li>
         </ul>

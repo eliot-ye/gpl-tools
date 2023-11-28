@@ -1,9 +1,4 @@
-import {
-  createSignalEffect,
-  createSubscribeEvents,
-  destroyEffect,
-  useEffect,
-} from ".";
+import { createSignalEffect, createSubscribeEvents } from ".";
 
 export const instructionPrefix = "s";
 export const mark = "BindDOM";
@@ -123,79 +118,10 @@ export function createApp({
       }
     },
 
-    // for: (option) => {
-    //   if (!option.children || !option.parentElement) {
-    //     return;
-    //   }
-    //   const { element, parentElement, value, execute } = option;
-    //   let _childrenEle = [];
-    //   for (let i = 0; i < parentElement.children.length; i++) {
-    //     _childrenEle.push(parentElement.children[i]);
-    //   }
-    //   _childrenEle.forEach((item) => {
-    //     parentElement.removeChild(item);
-    //   });
-    //   option.children.forEach((dependency) => {
-    //     if (dependency.effectId) {
-    //       destroyEffect(dependency.effectId);
-    //     }
-    //   });
-    //   option.children = [];
-
-    //   const instructionFor = `${instructionPrefix}-for`;
-    //   const valueList = value.split(" in ");
-    //   const list = execute(valueList[1].trim());
-    //   if (!Array.isArray(list) && typeof list !== "number") {
-    //     throw new Error(
-    //       `Invalid ${instructionFor}="${value}": ${valueList[1]} is not an array or number`
-    //     );
-    //   }
-    //   let itemKey = valueList[0].trim();
-    //   let indexKey = itemKey + "$index";
-    //   if (itemKey.includes(",")) {
-    //     const itemKeyList = itemKey.split(".");
-    //     itemKey = itemKeyList[0];
-    //     indexKey = itemKeyList[1];
-    //   }
-    //   if (Array.isArray(list)) {
-    //     for (let i = 0; i < list.length; i++) {
-    //       const item = list[i];
-    //       const scopeItem = {
-    //         [indexKey]: i,
-    //         [itemKey]: item,
-    //       };
-    //       const scopeItemElement = element.cloneNode(true) as HTMLElement;
-    //       scopeItemElement.removeAttribute(instructionFor);
-    //       executeDependency(
-    //         option.children,
-    //         scopeItemElement,
-    //         scopeItem,
-    //         parentElement
-    //       );
-    //     }
-    //   }
-    //   console.log(option.children);
-    //   render(option.children);
-
-    //   function renderChildren(
-    //     _dependencyList: DependencyItem[],
-    //     _parentElement: HTMLElement
-    //   ) {
-    //     _dependencyList.forEach((item) => {
-    //       _parentElement.appendChild(item.element);
-    //       if (item.children && item.children.length) {
-    //         renderChildren(item.children, item.element);
-    //       }
-    //     });
-    //   }
-
-    //   renderChildren(option.children, parentElement);
-    // },
-
-    on: ({ element, param, value }) => {
+    on: ({ element, param, value, data }) => {
       if (param) {
         element.addEventListener(param, (ev) => {
-          $getScope(value, { ...dataMap, $event: ev });
+          $getScope(value, { ...data, $event: ev });
         });
       }
     },
@@ -212,19 +138,6 @@ export function createApp({
     if (parentElement) {
       const instructionFor = `${instructionPrefix}-for`;
       if (scopeElement.hasAttribute(instructionFor)) {
-        const instructionForValue = scopeElement.getAttribute(instructionFor);
-        // if (instructionForValue) {
-        //   dependencyList.push({
-        //     element: scopeElement,
-        //     parentElement,
-        //     name: "for",
-        //     value: instructionForValue,
-        //     param: "",
-        //     data: scopeData,
-        //     children: [],
-        //   });
-        //   scopeElement.remove();
-        // }
         return;
       }
     }
@@ -278,7 +191,7 @@ export function createApp({
   function render(dependencyList: DependencyItem[]) {
     dependencyList.forEach((dependency) => {
       if (dependency.effectId) {
-        destroyEffect(dependency.effectId);
+        SignalEffect.destroyEffect(dependency.effectId);
       }
       dependency.effectId = SignalEffect.useEffect(() => {
         if (_directives[dependency.name]) {
