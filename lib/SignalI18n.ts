@@ -55,7 +55,10 @@ type SignalEffectRT = ReturnType<typeof createSignalEffect>;
  */
 export function createSignalI18n<T extends ReactiveConstantRT>(
   reactiveConstant: T,
-  option: {useEffect: SignalEffectRT['useEffect'], useSignal: SignalEffectRT['useSignal']} = {
+  option: {
+    useEffect: SignalEffectRT["useEffect"];
+    useSignal: SignalEffectRT["useSignal"];
+  } = {
     useEffect,
     useSignal,
   }
@@ -85,15 +88,14 @@ export function createSignalI18n<T extends ReactiveConstantRT>(
         }
         if (fromatRE.test(value)) {
           const fromatStr = element.getAttribute(`${instructionPrefix}-f`);
-          if (!fromatStr) {
-            return;
-          }
-          try {
-            const fromatData = JSON.parse(fromatStr);
-            value = fromatText(value, fromatData);
-          } catch (error) {
-            const fromatList = fromatStr.split(",");
-            value = fromatText.apply(null, [value, ...fromatList]);
+          if (fromatStr) {
+            try {
+              const fromatData = JSON.parse(fromatStr);
+              value = fromatText(value, fromatData);
+            } catch (error) {
+              const fromatList = fromatStr.split(",");
+              value = fromatText.apply(null, [value, ...fromatList]);
+            }
           }
         }
         element.innerHTML = value;

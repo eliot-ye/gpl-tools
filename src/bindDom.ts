@@ -49,16 +49,14 @@ createApp({
     function setS1(nData: number) {
       s1.$set(nData);
     }
-    function setS2(nData: number) {
-      s2.$set(nData);
-    }
     function setS3(nData: number) {
       s3.$set(nData);
     }
 
     const s4 = useSignal(1);
-    function inputS4(ev: any) {
-      s4.$set(ev.target.value);
+    function inputS4(ev: Event) {
+      const target = ev.target as HTMLInputElement;
+      s4.$set(Number(target.value));
     }
     const s4Disabled = useSignal(false);
     function setS4Disabled() {
@@ -73,12 +71,21 @@ createApp({
     });
 
     const s5 = useSignal(false);
-    function changeS5(ev: any) {
-      s5.$set(ev.target?.checked);
+    function changeS5(ev: Event) {
+      const target = ev.target as HTMLInputElement;
+      s5.$set(target.checked);
     }
     function setS5(value: boolean) {
       s5.$set(value);
     }
+
+    const s6 = useSignal([
+      { title: "1", children: [0, 1, 2, 3] },
+      { title: "2", children: [4, 5, 6, 7] },
+    ]);
+    useEffect(() => {
+      console.log("s6", s6());
+    });
 
     return {
       langCode,
@@ -86,7 +93,6 @@ createApp({
       s1,
       setS1,
       s2,
-      setS2,
       s3,
       setS3,
       s4,
@@ -96,6 +102,7 @@ createApp({
       s5,
       changeS5,
       setS5,
+      s6,
     };
   },
 });
