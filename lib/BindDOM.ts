@@ -1,10 +1,9 @@
-import { createSignalEffect, createSubscribeEvents } from ".";
+import { createSignalEffect } from ".";
 
 export const instructionPrefix = "s";
 export const mark = "BindDOM";
 
 type SignalEffectRT = ReturnType<typeof createSignalEffect>;
-type SubscribeEventRT = ReturnType<typeof createSubscribeEvents>;
 
 interface DependencyItem {
   element: HTMLElement;
@@ -28,7 +27,7 @@ interface AppOptions {
     useSignal: SignalEffectRT["useSignal"];
     useEffect: SignalEffectRT["useEffect"];
     destroyEffect: SignalEffectRT["destroyEffect"];
-    event: SubscribeEventRT;
+    onMount: (callback: () => void) => void;
   }) => Record<string, any>;
 }
 
@@ -46,11 +45,13 @@ export function createApp({
   }
 
   const SignalEffect = createSignalEffect(mark);
-  const SubscribeEvent = createSubscribeEvents(mark);
 
+  let onMountCallbacks: (() => void)[] = [];
   const AppCtx = {
     ...SignalEffect,
-    event: SubscribeEvent,
+    onMount: (callback: () => void) => {
+      onMountCallbacks.push(callback);
+    },
   };
 
   const dataMap = setup(AppCtx);
@@ -206,6 +207,8 @@ export function createApp({
     });
   }
   render(dependencySet);
+
+  onMountCallbacks.forEach((callback) => callback());
 
   return AppCtx;
 }

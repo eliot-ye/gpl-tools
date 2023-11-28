@@ -21,7 +21,7 @@ const I18nRC = createReactiveConstant({
 
 createApp({
   ele: "#app",
-  setup({ useSignal, useEffect }) {
+  setup({ useSignal, useEffect, onMount }) {
     const useI18n = createSignalI18n(I18nRC, {
       useSignal,
       useEffect,
@@ -32,6 +32,15 @@ createApp({
       I18nRC.$setCode(_langCode);
       langCode.$set(_langCode);
     }
+
+    console.log("setup1");
+    onMount(() => {
+      console.log("onMount1");
+    });
+    onMount(() => {
+      console.log("onMount2");
+    });
+    console.log("setup2");
 
     const s1 = useSignal(1);
     const s2 = useSignal(1);
