@@ -40,13 +40,13 @@
           <span s-text="s5">ss</span>
           <button s-t="s5" @click="setS5(!s5())">click</button>
         </div>
-        <button @click="s6.$set([...s6(),s6().length])">s6 add</button>
-        <button @click="s6.$set([...s6().slice(2,s6().length-1)])">s6 remove</button>
+        <!-- <button @click="s6.$set([...s6(),s6().length])">s6 add</button>
+        <button @click="s6.$set([...s6()])">s6 remove</button>
         <ul>
           <li s-for="item in s6">
             <span s-text="item.title"></span>
           </li>
-        </ul>
+        </ul> -->
       </div>
     </div>
   </div>
