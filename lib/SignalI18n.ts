@@ -1,6 +1,7 @@
 import {
   createReactiveConstant,
   createSignalEffect,
+  destroyEffect,
   useEffect,
   useSignal,
 } from ".";
@@ -55,12 +56,10 @@ type SignalEffectRT = ReturnType<typeof createSignalEffect>;
  */
 export function createSignalI18n<T extends ReactiveConstantRT>(
   reactiveConstant: T,
-  option: {
-    useEffect: SignalEffectRT["useEffect"];
-    useSignal: SignalEffectRT["useSignal"];
-  } = {
+  option: SignalEffectRT = {
     useEffect,
     useSignal,
+    destroyEffect,
   }
 ) {
   type V1 = ExcludedKey<T, `$${string}`>;
@@ -71,23 +70,24 @@ export function createSignalI18n<T extends ReactiveConstantRT>(
     useI18n.$set({ ...reactiveConstant });
   });
 
+  const instructionT = `${instructionPrefix}-t`;
+  const instructionF = `${instructionPrefix}-f`;
+
   option.useEffect(() => {
     const langEleList = document.querySelectorAll<HTMLElement>(
-      `[${instructionPrefix}-t]`
+      `[${instructionT}]`
     );
     const i18n = useI18n();
     for (let index = 0; index < langEleList.length; index++) {
       const element = langEleList[index];
-      const langKey = element.getAttribute(
-        `${instructionPrefix}-t`
-      ) as keyof V2;
+      const langKey = element.getAttribute(instructionT) as keyof V2;
       if (langKey) {
         let value = i18n[langKey] as string;
         if (typeof value === "function") {
           return;
         }
         if (fromatRE.test(value)) {
-          const fromatStr = element.getAttribute(`${instructionPrefix}-f`);
+          const fromatStr = element.getAttribute(instructionF);
           if (fromatStr) {
             try {
               const fromatData = JSON.parse(fromatStr);

@@ -18,17 +18,18 @@ interface DependencyItem {
 
 type Directives = Record<
   string,
-  (option: DependencyItem & { execute(str: string): any }) => void
+  (
+    option: DependencyItem & SignalEffectRT & { execute(str: string): any }
+  ) => void
 >;
 interface AppOptions {
   ele: HTMLElement | string | null;
   directives?: Directives;
-  setup: (ctx: {
-    useSignal: SignalEffectRT["useSignal"];
-    useEffect: SignalEffectRT["useEffect"];
-    destroyEffect: SignalEffectRT["destroyEffect"];
-    onMount: (callback: () => void) => void;
-  }) => Record<string, any>;
+  setup: (
+    ctx: SignalEffectRT & {
+      onMount: (callback: () => void) => void;
+    }
+  ) => Record<string, any>;
 }
 
 export function createApp({
@@ -79,44 +80,62 @@ export function createApp({
   const _directives: Directives = {
     ...directives,
 
-    text: ({ element, execute, value }) => {
-      element.innerText = execute(value);
+    text: (_opt) => {
+      const { element, execute, value } = _opt;
+      if (_opt.effectId) {
+        _opt.destroyEffect(_opt.effectId);
+      }
+      _opt.effectId = _opt.useEffect(() => {
+        element.innerText = execute(value);
+      });
     },
-    html: ({ element, execute, value }) => {
-      element.innerHTML = execute(value);
+    html: (_opt) => {
+      const { element, execute, value } = _opt;
+      if (_opt.effectId) {
+        _opt.destroyEffect(_opt.effectId);
+      }
+      _opt.effectId = _opt.useEffect(() => {
+        element.innerHTML = execute(value);
+      });
     },
 
-    bind: ({ element, execute, param, value }) => {
-      const _value = execute(value);
-      if (param === "value") {
-        const _ele = element as
-          | HTMLInputElement
-          | HTMLSelectElement
-          | HTMLTextAreaElement;
-        _ele.value = _value;
-      } else if (param === "checked") {
-        const _ele = element as HTMLInputElement;
-        if (_value) {
-          _ele.checked = true;
-          _ele.setAttribute("checked", "checked");
-        } else {
-          _ele.checked = false;
-          _ele.removeAttribute("checked");
-        }
-      } else if (param === "disabled") {
-        const _ele = element as
-          | HTMLInputElement
-          | HTMLSelectElement
-          | HTMLTextAreaElement
-          | HTMLButtonElement;
-        _value
-          ? _ele.setAttribute("disabled", "disabled")
-          : _ele.removeAttribute("disabled");
-      } else if (param) {
-        _value
-          ? element.setAttribute(param, _value)
-          : element.removeAttribute(param);
+    bind: (_opt) => {
+      const { element, execute, param, value } = _opt;
+      if (_opt.effectId) {
+        _opt.destroyEffect(_opt.effectId);
       }
+      _opt.effectId = _opt.useEffect(() => {
+        const _value = execute(value);
+        if (param === "value") {
+          const _ele = element as
+            | HTMLInputElement
+            | HTMLSelectElement
+            | HTMLTextAreaElement;
+          _ele.value = _value;
+        } else if (param === "checked") {
+          const _ele = element as HTMLInputElement;
+          if (_value) {
+            _ele.checked = true;
+            _ele.setAttribute("checked", "checked");
+          } else {
+            _ele.checked = false;
+            _ele.removeAttribute("checked");
+          }
+        } else if (param === "disabled") {
+          const _ele = element as
+            | HTMLInputElement
+            | HTMLSelectElement
+            | HTMLTextAreaElement
+            | HTMLButtonElement;
+          _value
+            ? _ele.setAttribute("disabled", "disabled")
+            : _ele.removeAttribute("disabled");
+        } else if (param) {
+          _value
+            ? element.setAttribute(param, _value)
+            : element.removeAttribute(param);
+        }
+      });
     },
 
     on: ({ element, param, value, data }) => {
@@ -191,19 +210,15 @@ export function createApp({
 
   function render(dependencyList: DependencyItem[]) {
     dependencyList.forEach((dependency) => {
-      if (dependency.effectId) {
-        SignalEffect.destroyEffect(dependency.effectId);
+      if (_directives[dependency.name]) {
+        _directives[dependency.name]({
+          ...dependency,
+          ...SignalEffect,
+          execute: (_value: string) => $getScope(_value, dependency.data),
+        });
+      } else {
+        console.error("directives not found", dependency.name);
       }
-      dependency.effectId = SignalEffect.useEffect(() => {
-        if (_directives[dependency.name]) {
-          _directives[dependency.name]({
-            ...dependency,
-            execute: (_value: string) => $getScope(_value, dependency.data),
-          });
-        } else {
-          console.error("directives not found", dependency.name);
-        }
-      });
     });
   }
   render(dependencySet);
