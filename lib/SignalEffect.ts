@@ -1,7 +1,11 @@
 import { debounce } from "./utils/tools";
 
+interface Execute {
+  (): void | (() => void);
+}
 interface SubscriberItem {
-  execute?: () => void;
+  execute?: Execute;
+  beforeDestroy?: void | (() => void);
 }
 
 let serialNumber = 0;
@@ -17,24 +21,24 @@ export function createSignalEffect(mark?: string) {
   /**
    * 注意：初始化时会执行一次callback，用于收集所有Signal依赖项，此时所有需要有反应性的依赖项都应该执行一次
    */
-  function useEffect(callback: () => void) {
+  function useEffect(callback: Execute) {
     const index = signalSubscribers.length;
 
     function _execute() {
       try {
-        callback();
+        return callback();
       } catch (error) {
         console.error(`${_mark} useEffect (index: ${index}) error:`, error);
       }
     }
     const execute = debounce(_execute, { wait: 0 });
 
-    const _activeSubscriber = { execute };
+    const _activeSubscriber: SubscriberItem = { execute };
 
     signalSubscribers.push(_activeSubscriber);
 
     activeSubscriber = _activeSubscriber;
-    _execute();
+    _activeSubscriber.beforeDestroy = _execute();
     activeSubscriber = undefined;
 
     return index;
@@ -59,7 +63,7 @@ export function createSignalEffect(mark?: string) {
       subscriberList.forEach((_subscriber, index) => {
         if (_subscriber) {
           if (_subscriber.execute) {
-            _subscriber.execute();
+            _subscriber.beforeDestroy = _subscriber.execute();
           } else {
             subscriberList[index] = undefined;
           }
@@ -82,6 +86,9 @@ export function createSignalEffect(mark?: string) {
   function destroyEffect(id: number) {
     const signal = signalSubscribers[id];
     if (signal) {
+      if (signal.beforeDestroy) {
+        signal.beforeDestroy();
+      }
       signal.execute = undefined;
     }
     signalSubscribers[id] = undefined;
