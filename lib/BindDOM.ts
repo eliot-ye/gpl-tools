@@ -67,11 +67,9 @@ export function createApp({
       return scopeDataMap[str];
     }
 
-    let dataStr = "";
-    for (let i = 0; i < _scopeDataList.length; i++) {
-      const key = _scopeDataList[i];
-      dataStr += `var ${key} = arguments[0]['${key}'];`;
-    }
+    const dataStr = _scopeDataList
+      .map((key) => `var ${key} = arguments[0]['${key}'];`)
+      .join("");
     return new Function(`"use strict"; ${dataStr} return (${str});`)(
       scopeDataMap
     );
