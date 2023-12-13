@@ -56,7 +56,7 @@ export function createSignalEffect(mark?: string) {
       if (typeof _nValue === "function") {
         _nValue = _nValue(_oValue);
       }
-      if (_nValue === _oValue) {
+      if (Object.is(_nValue, _oValue)) {
         return;
       }
       _oValue = _nValue;
