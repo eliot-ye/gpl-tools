@@ -3,17 +3,15 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   build: {
-    rollupOptions: {
-      input: {
-        index: resolve(__dirname, "index.html"),
-        bindDom: resolve(__dirname, "html/bindDom.html"),
+    lib: {
+      entry: {
+        index: resolve(__dirname, "lib/index.ts"),
+        subscribeEvents: resolve(__dirname, "lib/SubscribeEvents.ts"),
+        signalEffect: resolve(__dirname, "lib/SignalEffect.ts"),
+        signalI18n: resolve(__dirname, "lib/SignalI18n.ts"),
+        reactiveConstant: resolve(__dirname, "lib/ReactiveConstant.ts"),
       },
-      output: {
-        entryFileNames: "assets/[name].js",
-        chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name].[ext]",
-      },
+      name: "GPL",
     },
-    // minify: false,
   },
 });
