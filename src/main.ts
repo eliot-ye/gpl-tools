@@ -2,7 +2,6 @@ import "./style.css";
 import {
   useEffect,
   useSignal,
-  destroyEffect,
   createReactiveConstant,
   createSignalI18n,
   fromatText,
@@ -48,24 +47,17 @@ const s1 = useSignal(1);
 const s2 = useSignal(1);
 const s3 = useSignal(1);
 
-const btnS1 = document.getElementById("btnS1");
-if (btnS1) {
-  btnS1.addEventListener("click", function () {
-    s1.$set((v) => v + 1);
-  });
-}
-const btnS2 = document.getElementById("btnS2");
-if (btnS2) {
-  btnS2.addEventListener("click", function () {
-    s2.$set((v) => v + 1);
-  });
-}
+document.getElementById("btnS1")!.addEventListener("click", function () {
+  s1.$set((v) => v + 1);
+});
+document.getElementById("btnS2")!.addEventListener("click", function () {
+  s2.$set((v) => v + 1);
+});
+
 const btnS3 = document.getElementById("btnS3");
-if (btnS3) {
-  btnS3.addEventListener("click", function () {
-    s3.$set((v) => v + 1);
-  });
-}
+btnS3!.addEventListener("click", function () {
+  s3.$set((v) => v + 1);
+});
 
 useEffect(() => {
   console.log("useSignalEffect1", s1());
@@ -87,16 +79,18 @@ useEffect(() => {
   if (ele) {
     ele.innerHTML = s3().toString();
   }
-
-  if (btnS3) {
-    const i18n = useI18n();
-    btnS3.innerText = fromatText(i18n.s3, { count: s3() });
-  }
+  const i18n = useI18n();
+  btnS3!.innerText = fromatText(i18n.s3, { count: s3() });
 });
-const s4Id = useEffect(() => {
+const destroyEffect4 = useEffect(() => {
   console.log("useSignalEffect4", s1(), s2(), s3());
+
+  return () => {
+    console.log("useSignalEffect4 destroy");
+  };
 });
-destroyEffect(s4Id);
+// @ts-ignore
+window.destroyEffect4 = destroyEffect4;
 
 let init = false;
 useEffect(() => {

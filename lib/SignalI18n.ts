@@ -1,7 +1,6 @@
 import {
   createReactiveConstant,
   createSignalEffect,
-  destroyEffect,
   useEffect,
   useSignal,
 } from ".";
@@ -59,7 +58,6 @@ export function createSignalI18n<T extends ReactiveConstantRT>(
   option: SignalEffectRT = {
     useEffect,
     useSignal,
-    destroyEffect,
   }
 ) {
   type V1 = ExcludedKey<T, `$${string}`>;

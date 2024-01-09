@@ -14,7 +14,7 @@ export function createSignalEffect(mark?: string) {
   serialNumber++;
   const _mark = mark || `SerialNumber-${serialNumber}`;
 
-  const signalSubscribers: (SubscriberItem | undefined)[] = [];
+  const subscriberMap: (SubscriberItem | undefined)[][] = [];
 
   let activeSubscriber: SubscriberItem | undefined;
 
@@ -22,37 +22,45 @@ export function createSignalEffect(mark?: string) {
    * 注意：初始化时会执行一次callback，用于收集所有Signal依赖项，此时所有需要有反应性的依赖项都应该执行一次
    */
   function useEffect(callback: Execute) {
-    const index = signalSubscribers.length;
-
     function _execute() {
       try {
         return callback();
       } catch (error) {
-        console.error(`${_mark} useEffect (index: ${index}) error:`, error);
+        console.error(`${_mark} useEffect error:`, error);
       }
     }
     const execute = debounce(_execute, { wait: 0 });
 
     const _activeSubscriber: SubscriberItem = { execute };
 
-    signalSubscribers.push(_activeSubscriber);
-
     activeSubscriber = _activeSubscriber;
-    _activeSubscriber.beforeDestroy = _execute();
+    let beforeDestroy = _execute();
+    _activeSubscriber.beforeDestroy = beforeDestroy;
     activeSubscriber = undefined;
 
-    return index;
+    return () => {
+      subscriberMap.forEach((_subscriberList) => {
+        _subscriberList.forEach((_subscriber, _index) => {
+          if (_subscriber?.execute === execute) {
+            beforeDestroy = _subscriber.beforeDestroy;
+            _subscriberList.splice(_index, 1);
+          }
+        });
+      });
+      beforeDestroy && beforeDestroy();
+    };
   }
 
   function useSignal<T>(initValue: T) {
     let _oValue = initValue;
 
     const subscriberList: (SubscriberItem | undefined)[] = [];
+    subscriberMap.push(subscriberList);
 
     function setValueHandle(value: T): void;
     function setValueHandle(rValue: (value: T) => T): void;
     function setValueHandle(value: T | ((value: T) => T)) {
-      let _nValue = value as any;
+      let _nValue = value as T;
       if (typeof _nValue === "function") {
         _nValue = _nValue(_oValue);
       }
@@ -60,13 +68,9 @@ export function createSignalEffect(mark?: string) {
         return;
       }
       _oValue = _nValue;
-      subscriberList.forEach((_subscriber, index) => {
-        if (_subscriber) {
-          if (_subscriber.execute) {
-            _subscriber.beforeDestroy = _subscriber.execute();
-          } else {
-            subscriberList[index] = undefined;
-          }
+      subscriberList.forEach((_subscriber) => {
+        if (_subscriber && _subscriber.execute) {
+          _subscriber.beforeDestroy = _subscriber.execute();
         }
       });
     }
@@ -83,22 +87,10 @@ export function createSignalEffect(mark?: string) {
     return getValueHandle;
   }
 
-  function destroyEffect(id: number) {
-    const signal = signalSubscribers[id];
-    if (signal) {
-      if (signal.beforeDestroy) {
-        signal.beforeDestroy();
-      }
-      signal.execute = undefined;
-    }
-    signalSubscribers[id] = undefined;
-  }
-
   return {
     useEffect,
     useSignal,
-    destroyEffect,
   };
 }
 
-export const { useEffect, useSignal, destroyEffect } = createSignalEffect();
+export const { useEffect, useSignal } = createSignalEffect();

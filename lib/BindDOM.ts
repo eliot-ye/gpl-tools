@@ -12,8 +12,8 @@ interface DependencyItem {
   value: string;
   param: string;
   data: any;
-  effectId?: number;
   children?: DependencyItem[];
+  destroyEffect?: () => void;
 }
 
 type Directives = Record<
@@ -80,29 +80,29 @@ export function createApp({
 
     text: (_opt) => {
       const { element, execute, value } = _opt;
-      if (_opt.effectId) {
-        _opt.destroyEffect(_opt.effectId);
+      if (_opt.destroyEffect) {
+        _opt.destroyEffect();
       }
-      _opt.effectId = _opt.useEffect(() => {
+      _opt.destroyEffect = _opt.useEffect(() => {
         element.innerText = execute(value);
       });
     },
     html: (_opt) => {
       const { element, execute, value } = _opt;
-      if (_opt.effectId) {
-        _opt.destroyEffect(_opt.effectId);
+      if (_opt.destroyEffect) {
+        _opt.destroyEffect();
       }
-      _opt.effectId = _opt.useEffect(() => {
+      _opt.destroyEffect = _opt.useEffect(() => {
         element.innerHTML = execute(value);
       });
     },
 
     bind: (_opt) => {
       const { element, execute, param, value } = _opt;
-      if (_opt.effectId) {
-        _opt.destroyEffect(_opt.effectId);
+      if (_opt.destroyEffect) {
+        _opt.destroyEffect();
       }
-      _opt.effectId = _opt.useEffect(() => {
+      _opt.destroyEffect = _opt.useEffect(() => {
         const _value = execute(value);
         if (param === "value") {
           const _ele = element as

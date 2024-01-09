@@ -21,11 +21,10 @@ const I18nRC = createReactiveConstant({
 
 createApp({
   ele: "#app",
-  setup({ useSignal, useEffect, destroyEffect, onMount }) {
+  setup({ useSignal, useEffect, onMount }) {
     const useI18n = createSignalI18n(I18nRC, {
       useSignal,
       useEffect,
-      destroyEffect,
     });
 
     const langCode = useSignal(I18nRC.$getCode());
