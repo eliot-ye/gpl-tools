@@ -5,6 +5,7 @@ import {
   createReactiveConstant,
   createSignalI18n,
   fromatText,
+  useWatch,
 } from "../lib";
 
 const I18nRC = createReactiveConstant({
@@ -101,3 +102,7 @@ useEffect(() => {
   }
 });
 init = true;
+
+useWatch(s3, () => {
+  console.log("useWatch1", s1(), s2(), s3());
+});

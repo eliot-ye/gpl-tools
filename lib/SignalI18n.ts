@@ -1,8 +1,8 @@
 import {
   createReactiveConstant,
   createSignalEffect,
-  useEffect,
-  useSignal,
+  useWatch as useGWatch,
+  useSignal as useGSignal,
 } from ".";
 import { instructionPrefix } from "./BindDOM";
 
@@ -55,15 +55,14 @@ type SignalEffectRT = ReturnType<typeof createSignalEffect>;
  */
 export function createSignalI18n<T extends ReactiveConstantRT>(
   reactiveConstant: T,
-  option: SignalEffectRT = {
-    useEffect,
-    useSignal,
-  }
+  option: Partial<SignalEffectRT> = {}
 ) {
   type V1 = ExcludedKey<T, `$${string}`>;
   type V2 = ExcludedKey<V1, `_${string}`>;
 
-  const useI18n = option.useSignal<V2>(reactiveConstant);
+  const { useSignal = useGSignal, useWatch = useGWatch } = option;
+
+  const useI18n = useSignal<V2>(reactiveConstant);
   reactiveConstant.$addListener(() => {
     useI18n.$set({ ...reactiveConstant });
   });
@@ -71,7 +70,7 @@ export function createSignalI18n<T extends ReactiveConstantRT>(
   const instructionT = `${instructionPrefix}-t`;
   const instructionF = `${instructionPrefix}-f`;
 
-  option.useEffect(() => {
+  useWatch(useI18n, () => {
     const langEleList = document.querySelectorAll<HTMLElement>(
       `[${instructionT}]`
     );

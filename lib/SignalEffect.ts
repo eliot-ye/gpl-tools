@@ -1,5 +1,8 @@
 import { debounce } from "./utils/tools";
 
+interface SFn<T> {
+  (): T;
+}
 interface Execute {
   (): void | (() => void);
 }
@@ -51,8 +54,46 @@ export function createSignalEffect(mark?: string) {
     };
   }
 
+  function useWatch<T>(signalFn: SFn<T>, callback: Execute): () => void;
+  function useWatch<T>(signalList: SFn<T>[], callback: Execute): () => void;
+  function useWatch<T>(signal: SFn<T> | SFn<T>[], callback: Execute) {
+    function _execute() {
+      try {
+        return callback();
+      } catch (error) {
+        console.error(`${_mark} useWatch error:`, error);
+      }
+    }
+    const execute = debounce(_execute, { wait: 0 });
+
+    const _activeSubscriber: SubscriberItem = { execute };
+
+    activeSubscriber = _activeSubscriber;
+    if (Array.isArray(signal)) {
+      for (let i = 0; i < signal.length; i++) {
+        signal[i]();
+      }
+    } else {
+      signal();
+    }
+    activeSubscriber = undefined;
+
+    return () => {
+      let beforeDestroy: any;
+      subscriberMap.forEach((_subscriberList) => {
+        _subscriberList.forEach((_subscriber, _index) => {
+          if (_subscriber?.execute === execute) {
+            beforeDestroy = _subscriber.beforeDestroy;
+            _subscriberList.splice(_index, 1);
+          }
+        });
+      });
+      beforeDestroy && beforeDestroy();
+    };
+  }
+
   function useSignal<T>(initValue: T) {
-    let _oValue = initValue;
+    let _inValue = initValue;
 
     const subscriberList: (SubscriberItem | undefined)[] = [];
     subscriberMap.push(subscriberList);
@@ -62,12 +103,13 @@ export function createSignalEffect(mark?: string) {
     function setValueHandle(value: T | ((value: T) => T)) {
       let _nValue = value as T;
       if (typeof _nValue === "function") {
-        _nValue = _nValue(_oValue);
+        _nValue = _nValue(_inValue);
       }
-      if (Object.is(_nValue, _oValue)) {
+      if (Object.is(_nValue, _inValue)) {
         return;
       }
-      _oValue = _nValue;
+      // const _oValue = _inValue;
+      _inValue = _nValue;
       subscriberList.forEach((_subscriber) => {
         if (_subscriber && _subscriber.execute) {
           _subscriber.beforeDestroy = _subscriber.execute();
@@ -79,7 +121,7 @@ export function createSignalEffect(mark?: string) {
       if (activeSubscriber && !subscriberList.includes(activeSubscriber)) {
         subscriberList.push(activeSubscriber);
       }
-      return _oValue;
+      return _inValue;
     }
 
     getValueHandle.$set = setValueHandle;
@@ -90,7 +132,8 @@ export function createSignalEffect(mark?: string) {
   return {
     useEffect,
     useSignal,
+    useWatch,
   };
 }
 
-export const { useEffect, useSignal } = createSignalEffect();
+export const { useEffect, useSignal, useWatch } = createSignalEffect();
