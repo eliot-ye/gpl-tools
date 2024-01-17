@@ -1,9 +1,4 @@
-import {
-  createReactiveConstant,
-  createSignalEffect,
-  useWatch as useGWatch,
-  useSignal as useGSignal,
-} from ".";
+import { createReactiveConstant, useWatch, useSignal } from ".";
 import { instructionPrefix } from "./BindDOM";
 
 const fromatRE = /{(.*?)}/g;
@@ -46,7 +41,6 @@ type ExcludedKey<T, K> = {
   [Key in keyof T as Key extends K ? never : Key]: T[Key];
 };
 type ReactiveConstantRT = ReturnType<typeof createReactiveConstant>;
-type SignalEffectRT = ReturnType<typeof createSignalEffect>;
 
 /**
  * 一个基于 `SignalEffect` `ReactiveConstant` 的 document I18n 工具
@@ -54,13 +48,10 @@ type SignalEffectRT = ReturnType<typeof createSignalEffect>;
  * @returns function useI18n
  */
 export function createSignalI18n<T extends ReactiveConstantRT>(
-  reactiveConstant: T,
-  option: Partial<SignalEffectRT> = {}
+  reactiveConstant: T
 ) {
   type V1 = ExcludedKey<T, `$${string}`>;
   type V2 = ExcludedKey<V1, `_${string}`>;
-
-  const { useSignal = useGSignal, useWatch = useGWatch } = option;
 
   const useI18n = useSignal<V2>(reactiveConstant);
   reactiveConstant.$addListener(() => {

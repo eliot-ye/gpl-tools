@@ -1,5 +1,11 @@
 import "./style.css";
-import { createReactiveConstant, createSignalI18n, fromatText } from "../lib";
+import {
+  createReactiveConstant,
+  createSignalI18n,
+  fromatText,
+  useEffect,
+  useSignal,
+} from "../lib";
 import { createApp } from "../lib/BindDOM";
 
 const I18nRC = createReactiveConstant({
@@ -21,11 +27,8 @@ const I18nRC = createReactiveConstant({
 
 createApp({
   ele: "#app",
-  setup({ useSignal, useEffect, onMount }) {
-    const useI18n = createSignalI18n(I18nRC, {
-      useSignal,
-      useEffect,
-    });
+  setup({ onMount }) {
+    const useI18n = createSignalI18n(I18nRC);
 
     const langCode = useSignal(I18nRC.$getCode());
     function changeLang(_langCode: ReturnType<typeof I18nRC.$getCode>) {

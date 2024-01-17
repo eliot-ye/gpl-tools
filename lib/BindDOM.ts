@@ -1,9 +1,7 @@
-import { createSignalEffect } from ".";
+import { useEffect } from ".";
 
 export const instructionPrefix = "s";
 export const mark = "BindDOM";
-
-type SignalEffectRT = ReturnType<typeof createSignalEffect>;
 
 interface DependencyItem {
   element: HTMLElement;
@@ -18,18 +16,14 @@ interface DependencyItem {
 
 type Directives = Record<
   string,
-  (
-    option: DependencyItem & SignalEffectRT & { execute(str: string): any }
-  ) => void
+  (option: DependencyItem & { execute(str: string): any }) => void
 >;
 interface AppOptions {
   ele: HTMLElement | string | null;
   directives?: Directives;
-  setup: (
-    ctx: SignalEffectRT & {
-      onMount: (callback: () => void) => void;
-    }
-  ) => Record<string, any>;
+  setup: (ctx: {
+    onMount: (callback: () => void) => void;
+  }) => Record<string, any>;
 }
 
 export function createApp({
@@ -45,11 +39,8 @@ export function createApp({
     throw new Error("No root element found");
   }
 
-  const SignalEffect = createSignalEffect(mark);
-
   let onMountCallbacks: (() => void)[] = [];
   const AppCtx = {
-    ...SignalEffect,
     onMount: (callback: () => void) => {
       onMountCallbacks.push(callback);
     },
@@ -83,7 +74,7 @@ export function createApp({
       if (_opt.destroyEffect) {
         _opt.destroyEffect();
       }
-      _opt.destroyEffect = _opt.useEffect(() => {
+      _opt.destroyEffect = useEffect(() => {
         element.innerText = execute(value);
       });
     },
@@ -92,7 +83,7 @@ export function createApp({
       if (_opt.destroyEffect) {
         _opt.destroyEffect();
       }
-      _opt.destroyEffect = _opt.useEffect(() => {
+      _opt.destroyEffect = useEffect(() => {
         element.innerHTML = execute(value);
       });
     },
@@ -102,7 +93,7 @@ export function createApp({
       if (_opt.destroyEffect) {
         _opt.destroyEffect();
       }
-      _opt.destroyEffect = _opt.useEffect(() => {
+      _opt.destroyEffect = useEffect(() => {
         const _value = execute(value);
         if (param === "value") {
           const _ele = element as
@@ -211,7 +202,6 @@ export function createApp({
       if (_directives[dependency.name]) {
         _directives[dependency.name]({
           ...dependency,
-          ...SignalEffect,
           execute: (_value: string) => $getScope(_value, dependency.data),
         });
       } else {
